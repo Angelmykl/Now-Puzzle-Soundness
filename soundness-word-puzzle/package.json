@@ -1,0 +1,12 @@
+{
+    "name": "soundness-word-puzzle",
+    "version": "1.0.0",
+    "description": "A word search puzzle game built by Angelmykl",
+    "main": "public/index.html",
+    "scripts": {
+        "start": "vercel dev",
+        "deploy": "vercel --prod"
+    },
+    "author": "Angelmykl",
+    "license": "MIT"
+}
