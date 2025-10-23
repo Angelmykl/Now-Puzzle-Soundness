@@ -9,13 +9,12 @@
                 const timer = document.getElementById('timer-display');
                 const scoreEl = document.getElementById('score-display');
                 const wordsEl = document.getElementById('words-solved-display');
-                const startBtn = document.getElementById('start-challenge-btn');
+                const startBtn = document.getElementById('start-challenge-btn'); // Start Challenge button
                 const newGameBtn = document.getElementById('start-game-btn');
                 
-                // --- CORRECTED BUTTON ACCESS ---
-                // Original: const playAgainBtn = document.getElementById('play-again-btn'); // This was the hidden top button
-                const topPlayAgainBtn = document.getElementById('top-play-again-btn'); // The top button
-                const modalPlayAgainBtn = document.getElementById('play-again-modal-btn'); // The modal button (the one that wasn't working)
+                // Corrected/Renamed button elements for clarity from previous fix:
+                const topPlayAgainBtn = document.getElementById('top-play-again-btn'); 
+                const modalPlayAgainBtn = document.getElementById('play-again-modal-btn'); 
 
                 if (!grid || !timer) {
                     console.error("DOM elements missing");
@@ -57,7 +56,7 @@
                 const closeModal = () => document.getElementById('start-modal')?.classList.add('hidden');
                 const hideResult = () => document.getElementById('score-modal')?.classList.add('hidden');
                 
-                // Expose hideResult as hideModal for HTML compatibility
+                // Expose hideResult as hideModal (required by the HTML)
                 window.hideModal = hideResult;
 
                 // === TIMER ===
@@ -260,12 +259,11 @@
                     render(gridData);
                     update();
                     newGameBtn.classList.add("hidden");
-                    // Using the top-bar button for reference
                     topPlayAgainBtn.classList.remove("hidden"); 
                     startTimer();
                 };
 
-                // === FIXED PLAY AGAIN BUTTON ===
+                // === RESET GAME (PLAY AGAIN) ===
                 window.resetGame = () => {
                     clearInterval(interval);
                     timeLeft = TIME;
@@ -273,7 +271,7 @@
                     score = found = 0;
                     WORDS.forEach((w) => (w.solved = false));
 
-                    // Hide modal first (using the helper function)
+                    // Hide modal first
                     hideResult();
 
                     // Rebuild grid and start new game instantly
@@ -284,12 +282,18 @@
                 };
 
                 // === BUTTON EVENTS ===
-                if (startBtn) startBtn.onclick = window.startGame;
-                if (newGameBtn) newGameBtn.onclick = window.startGame;
+                if (startBtn) {
+                    // This is the "Start Challenge" button in the welcome modal
+                    startBtn.onclick = window.startGame; 
+                }
+                if (newGameBtn) {
+                    // This is the "Start New Game" button in the top bar
+                    newGameBtn.onclick = window.startGame;
+                }
                 
-                // --- CORRECTED BUTTON BINDING ---
-                if (topPlayAgainBtn) topPlayAgainBtn.onclick = window.startGame; // The top button can just start a new game
-                if (modalPlayAgainBtn) modalPlayAgainBtn.onclick = window.resetGame; // The end-of-game modal button
+                // Binding the 'Play Again' buttons to their respective actions
+                if (topPlayAgainBtn) topPlayAgainBtn.onclick = window.startGame; // Top button starts game
+                if (modalPlayAgainBtn) modalPlayAgainBtn.onclick = window.resetGame; // Modal button resets game
 
                 // === INIT ===
                 wordsEl.textContent = 0 / ${WORDS.length};
