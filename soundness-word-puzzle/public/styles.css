@@ -9,7 +9,7 @@ body {
     padding: 1rem;
 }
 
-/* 17x17 Grid */
+/* Grid Styles */
 #crossword-grid {
     display: grid;
     grid-template-columns: repeat(var(--grid-size, 17), 1fr);
@@ -20,8 +20,6 @@ body {
     user-select: none;
     touch-action: none;
     box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
-    border-radius: 12px;
-    overflow: hidden;
 }
 
 .grid-cell {
