@@ -18,7 +18,6 @@ const gridElement = document.getElementById('crossword-grid');
 const timerDisplay = document.getElementById('timer-display');
 const scoreDisplay = document.getElementById('score-display');
 const wordsSolvedDisplay = document.getElementById('words-solved-display');
-const startGameBtn = document.getElementById('start-game-btn');
 const playAgainBtn = document.getElementById('play-again-btn');
 
 // Word List (31 words)
@@ -77,45 +76,75 @@ function closeStartModal() {
     document.getElementById('start-modal').classList.add('hidden');
 }
 
+function hideModal() {
+    document.getElementById('score-modal').classList.add('hidden');
+}
+
 function showModal(heading, message) {
-    const averageScore = Math.floor(allWordsBase.length / 2); // 15
-    const timeUsed = TIME_LIMIT_SECONDS - timeRemaining;
-    const mins = String(Math.floor(timeUsed / 60)).padStart(2, '0');
-    const secs = String(timeUsed % 60).padStart(2, '0');
-    const timeStr = `${mins}:${secs}`;
+    const averageScore = Math.floor(allWordsBase.length / 2);
     const gameUrl = window.location.href;
 
-    // Share button for ALL players
-    const tweetText = encodeURIComponent(
-        `I just CRUSHED ${score} in Soundness Word Puzzle! Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`
-    );
-    const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
-
-    const shareButton = `
-        <a href="${tweetUrl}" target="_blank" rel="noopener" 
-           class="mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-2 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-            Share on X
-        </a>`;
-
-    // Champ message ONLY if score > 15
     let champMessage = '';
     if (score > averageScore) {
         champMessage = '<div class="mt-4 text-3xl font-bold text-yellow-500 flex items-center justify-center gap-2">YOU ARE A PUZZLE CHAMP!</div>';
     }
 
+    const shareButton = document.createElement('button');
+    shareButton.textContent = 'Preparing image...';
+    shareButton.disabled = true;
+    shareButton.className = 'mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md opacity-70';
+
     document.getElementById('modal-heading').innerHTML = heading + champMessage;
-    document.getElementById('modal-message').innerHTML = message + shareButton;
+    document.getElementById('modal-message').innerHTML = message;
     document.getElementById('modal-score').textContent = score;
     document.getElementById('modal-solved-words').textContent = wordsSolved;
     document.getElementById('modal-total-words').textContent = allWordsBase.length;
     document.getElementById('score-modal').classList.remove('hidden');
-}
 
-function hideModal() {
-    document.getElementById('score-modal').classList.add('hidden');
+    const shareContainer = document.getElementById('share-container');
+    shareContainer.innerHTML = '';
+    shareContainer.appendChild(shareButton);
+
+    html2canvas(document.body, { scale: 2, useCORS: true }).then(canvas => {
+        canvas.toBlob(async (blob) => {
+            try {
+                const formData = new FormData();
+                formData.append('image', blob, 'soundness-score.png');
+
+                const response = await fetch('https://api.imgbb.com/1/upload?key=5e3f7c7d5a6b4c9d8e1f2a3b4c5d6e7f', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const imageUrl = data.data.url;
+                    const tweetText = encodeURIComponent(
+                        `I just CRUSHED ${score} in Soundness Word Puzzle! Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`
+                    );
+                    const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${imageUrl}`;
+
+                    shareButton.innerHTML = `
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Share on X with Score!
+                    `;
+                    shareButton.disabled = false;
+                    shareButton.className = 'mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md';
+                    shareButton.onclick = () => window.open(tweetUrl, '_blank');
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (err) {
+                shareButton.textContent = 'Share Failed';
+                shareButton.disabled = false;
+                console.error('Share error:', err);
+            }
+        });
+    }).catch(err => {
+        shareButton.textContent = 'Screenshot Failed';
+        console.error('Canvas error:', err);
+    });
 }
 
 // Core Game Logic
@@ -129,8 +158,7 @@ function startGame() {
     const generatedGrid = generateWordSearch(allWordsBase);
     renderGrid(generatedGrid);
     updateScoreDisplay();
-    startGameBtn.classList.add('hidden');
-    playAgainBtn.classList.remove('hidden');
+    playAgainBtn.classList.add('hidden');
     startTimer();
 }
 
@@ -141,8 +169,6 @@ function resetGame() {
     score = 0;
     wordsSolved = 0;
     gridElement.innerHTML = '';
-    const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE).fill('<div class="grid-cell"></div>').join('');
-    gridElement.innerHTML = emptyGridHtml;
     hideModal();
     openStartModal();
     updateScoreDisplay();
@@ -166,8 +192,7 @@ function endGame(isSolved) {
         : `Time ran out! You found ${wordsSolved} of ${allWordsBase.length} words.`;
     const heading = isSolved ? "PUZZLE SOLVED!" : "TIME'S UP!";
     showModal(heading, message);
-    startGameBtn.classList.remove('hidden');
-    playAgainBtn.classList.add('hidden');
+    playAgainBtn.classList.remove('hidden');
 }
 
 // Selection & Checking Logic
@@ -276,12 +301,8 @@ function attemptPlacement(word, r, c, direction, grid) {
     for (let i = 0; i < len; i++) {
         const curR = r + i * dr;
         const curC = c + i * dc;
-        if (curR < 0 || curR >= GRID_SIZE || curC < 0 || curC >= GRID_SIZE) {
-            return false;
-        }
-        if (grid[curR][curC] !== null && grid[curR][curC] !== word[i]) {
-            return false;
-        }
+        if (curR < 0 || curR >= GRID_SIZE || curC < 0 || curC >= GRID_SIZE) return false;
+        if (grid[curR][curC] !== null && grid[curR][curC] !== word[i]) return false;
     }
     for (let i = 0; i < len; i++) {
         grid[r + i * dr][c + i * dc] = word[i];
@@ -307,8 +328,7 @@ function generateWordSearch(words) {
                 placed = true;
                 wordLocations.push({
                     ...wordData,
-                    startR: r,
-                    startC: c,
+                    startR: r, startC: c,
                     endR: r + (word.length - 1) * dir.dr,
                     endC: c + (word.length - 1) * dir.dc,
                     direction: dir.name
@@ -341,7 +361,7 @@ function renderGrid(grid) {
     }
     gridElement.onmousedown = onSelectStart;
     gridElement.ontouchstart = onSelectStart;
-    document.onmouseup = onSelectEvent;
+    document.onmouseup = onSelectEnd;
     document.ontouchend = onSelectEnd;
     document.onmousemove = onSelectMove;
     document.ontouchmove = onSelectMove;
@@ -375,16 +395,12 @@ function startTimer() {
 // Initialization
 window.onload = () => {
     wordsSolvedDisplay.textContent = `0 / ${allWordsBase.length}`;
-    
-    // Create 17x17 empty grid
     const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE)
         .fill('<div class="grid-cell"></div>')
         .join('');
     gridElement.innerHTML = emptyGridHtml;
-
     openStartModal();
 
-    // CORRECT BUTTON
     document.getElementById('start-challenge-btn').onclick = () => {
         closeStartModal();
         startGame();
