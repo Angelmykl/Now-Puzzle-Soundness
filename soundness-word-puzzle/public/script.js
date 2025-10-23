@@ -81,11 +81,13 @@ function showModal(heading, message) {
     const averageScore = 15;
     const gameUrl = window.location.href;
 
+    // Add "PUZZLE CHAMP!" only if score > 15
     let champMessage = '';
     if (score > averageScore) {
         champMessage = '<div class="mt-4 text-3xl font-bold text-yellow-500 flex items-center justify-center gap-2">YOU ARE A PUZZLE CHAMP!</div>';
     }
 
+    // Update modal content
     document.getElementById('modal-heading').innerHTML = heading + champMessage;
     document.getElementById('modal-message').innerHTML = message;
     document.getElementById('modal-score').textContent = score;
@@ -93,48 +95,46 @@ function showModal(heading, message) {
     document.getElementById('modal-total-words').textContent = allWordsBase.length;
     document.getElementById('score-modal').classList.remove('hidden');
 
+    // Share container
     const shareContainer = document.getElementById('share-container');
-    shareContainer.innerHTML = '<button class="mt-5 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg opacity-70" disabled>Preparing image...</button>';
+    shareContainer.innerHTML = '';
 
-    // TAKE FULL SCREENSHOT
-    html2canvas(document.body, { scale: 2, useCORS: true }).then(canvas => {
-        canvas.toBlob(async (blob) => {
-            const formData = new FormData();
-            formData.append('image', blob, 'soundness-score.png');
+    // Create Share Button
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md';
+    shareBtn.innerHTML = `
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+        Share on X with Score!
+    `;
 
-            try {
-                const response = await fetch('https://api.imgbb.com/1/upload?key=5e3f7c7d5a6b4c9d8e1f2a3b4c5d6e7f', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                if (data.success) {
-                    const imageUrl = data.data.url;
-                    const tweetText = encodeURIComponent(
-                        `I just CRUSHED ${score} in Soundness Word Puzzle! Built by Angelmykl. Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`
-                    );
-                    const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${imageUrl}`;
+    // Click → Share via Web Share (mobile) or Twitter (PC)
+    shareBtn.onclick = () => {
+        const tweetText = `I just CRUSHED ${score} in Soundness Word Puzzle! Built by Angelmykl. Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`;
 
-                    shareContainer.innerHTML = `
-                        <a href="${tweetUrl}" target="_blank" rel="noopener"
-                           class="mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                            </svg>
-                            Share on X with Score!
-                        </a>`;
-                } else {
-                    throw new Error('Upload failed');
-                }
-            } catch (err) {
-                shareContainer.innerHTML = '<button class="mt-5 bg-red-600 text-white py-3 px-6 rounded-lg">Share Failed</button>';
-                console.error('Share error:', err);
-            }
-        });
-    }).catch(err => {
-        shareContainer.innerHTML = '<button class="mt-5 bg-red-600 text-white py-3 px-6 rounded-lg">Screenshot Failed</button>';
-        console.error('Canvas error:', err);
-    });
+        if (navigator.share) {
+            // Mobile: Native share
+            navigator.share({
+                title: 'My Soundness Word Puzzle Score!',
+                text: tweetText,
+                url: gameUrl
+            }).catch(() => {
+                // Fallback to Twitter
+                openTwitter(tweetText);
+            });
+        } else {
+            // Desktop: Open Twitter
+            openTwitter(tweetText);
+        }
+    };
+
+    function openTwitter(text) {
+        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank', 'width=600,height=400');
+    }
+
+    shareContainer.appendChild(shareBtn);
 }
 
 function hideModal() {
