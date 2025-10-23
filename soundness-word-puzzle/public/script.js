@@ -1,7 +1,6 @@
-// JavaScript logic for Soundness Word Puzzle (full code included by user previously)
 // Grid configuration
-const GRID_SIZE = 16;
-const TIME_LIMIT_SECONDS = 120;
+const GRID_SIZE = 17;
+const TIME_LIMIT_SECONDS = 210;
 
 // Game State
 let timerInterval = null;
@@ -22,12 +21,14 @@ const wordsSolvedDisplay = document.getElementById('words-solved-display');
 const startGameBtn = document.getElementById('start-game-btn');
 const playAgainBtn = document.getElementById('play-again-btn');
 
-// Word List
+// Word List (31 words)
 const allWordsBase = [
-    "SUCCESSFUL", "PROOF", "SUI", "WALRUS", "LINERA", "LIGERO", 
-    "BLOCKCHAIN", "ZERO", "KNOWLEDGE", "ZIPPY", "BLU", "BLOOP", 
-    "WAVA", "ECHO", "GENERATE", "SUBMITTED", "PHAXY", "WENDY", 
-    "OXY", "KARAOKE", "MOJA", "LUTO"
+    "SUCCESSFUL", "PROOF", "SUI", "WALRUS", "LINERA", "LIGERO",
+    "BLOCKCHAIN", "ZERO", "KNOWLEDGE", "ZIPPY", "BLU", "BLOOP",
+    "WAVA", "ECHO", "GENERATE", "SUBMITTED", "PHAXY", "WENDY",
+    "OXY", "KARAOKE", "MOJA", "LUTO",
+    "CRYPTOGRAPHY", "VERIFICATION", "LAYER", "DECENTRALIZED",
+    "SCALABLE", "DATA", "ROCKY", "MAHDI", "QUANTUM"
 ].map((w, id) => ({ word: w.toUpperCase(), id: id + 1, solved: false }));
 
 const DIRECTIONS = [
@@ -77,8 +78,36 @@ function closeStartModal() {
 }
 
 function showModal(heading, message) {
-    document.getElementById('modal-heading').textContent = heading;
-    document.getElementById('modal-message').textContent = message;
+    const averageScore = Math.floor(allWordsBase.length / 2); // 15
+    const timeUsed = TIME_LIMIT_SECONDS - timeRemaining;
+    const mins = String(Math.floor(timeUsed / 60)).padStart(2, '0');
+    const secs = String(timeUsed % 60).padStart(2, '0');
+    const timeStr = `${mins}:${secs}`;
+    const gameUrl = window.location.href;
+
+    // Share button for ALL players
+    const tweetText = encodeURIComponent(
+        `I just CRUSHED ${score} in Soundness Word Puzzle! Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`
+    );
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
+
+    const shareButton = `
+        <a href="${tweetUrl}" target="_blank" rel="noopener" 
+           class="mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-2 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            Share on X
+        </a>`;
+
+    // Champ message ONLY if score > 15
+    let champMessage = '';
+    if (score > averageScore) {
+        champMessage = '<div class="mt-4 text-3xl font-bold text-yellow-500 flex items-center justify-center gap-2">YOU ARE A PUZZLE CHAMP!</div>';
+    }
+
+    document.getElementById('modal-heading').innerHTML = heading + champMessage;
+    document.getElementById('modal-message').innerHTML = message + shareButton;
     document.getElementById('modal-score').textContent = score;
     document.getElementById('modal-solved-words').textContent = wordsSolved;
     document.getElementById('modal-total-words').textContent = allWordsBase.length;
@@ -268,7 +297,7 @@ function generateWordSearch(words) {
         const word = wordData.word;
         let placed = false;
         let attempts = 0;
-        const maxAttempts = GRID_SIZE * GRID_SIZE * DIRECTIONS.length * 2;
+        const maxAttempts = GRID_SIZE * GRID_SIZE * DIRECTIONS.length * 3;
         while (!placed && attempts < maxAttempts) {
             attempts++;
             const r = Math.floor(Math.random() * GRID_SIZE);
@@ -312,7 +341,7 @@ function renderGrid(grid) {
     }
     gridElement.onmousedown = onSelectStart;
     gridElement.ontouchstart = onSelectStart;
-    document.onmouseup = onSelectEnd;
+    document.onmouseup = onSelectEvent;
     document.ontouchend = onSelectEnd;
     document.onmousemove = onSelectMove;
     document.ontouchmove = onSelectMove;
