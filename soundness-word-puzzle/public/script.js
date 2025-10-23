@@ -1,6 +1,5 @@
-// === IMMEDIATE SAFE EXECUTION — AVOIDS METAMASK CRASH ===
+// === SAFE GAME INITIALIZATION ===
 (() => {
-    // Wait for DOM + delay to bypass wallet injection
     const safeInit = () => {
         setTimeout(() => {
             try {
@@ -13,10 +12,7 @@
                 const newGameBtn = document.getElementById('start-game-btn');
                 const playAgainBtn = document.getElementById('play-again-btn');
 
-                if (!grid || !timer) {
-                    console.error("DOM elements missing");
-                    return;
-                }
+                if (!grid || !timer) return console.error("Grid or timer element not found");
 
                 // === CONFIG ===
                 const SIZE = 17;
@@ -38,13 +34,7 @@
                 let path = [];
                 let gridData = null;
 
-                // === DIRECTIONS ===
-                const DIRS = [
-                    [0,1],[0,-1],[1,0],[-1,0],
-                    [1,1],[1,-1],[-1,1],[-1,-1]
-                ];
-
-                // === UTILS ===
+                const DIRS = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
                 const randLetter = () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random()*26)];
                 const cell = (r,c) => document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
 
@@ -66,7 +56,7 @@
                     }, 1000);
                 };
 
-                // === GRID BUILDER (FIXED) ===
+                // === GRID BUILDER ===
                 const build = () => {
                     const g = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
                     WORDS.forEach(w => {
@@ -84,7 +74,7 @@
                     });
                     for (let r=0; r<SIZE; r++)
                         for (let c=0; c<SIZE; c++)
-                            if (g[r][c] === null) g[r][c] = randLetter();
+                            if (!g[r][c]) g[r][c] = randLetter();
                     return g;
                 };
 
@@ -92,19 +82,16 @@
                     for (let i=0; i<w.length; i++) {
                         const nr = r + i*d[0], nc = c + i*d[1];
                         if (nr<0 || nr>=SIZE || nc<0 || nc>=SIZE) return false;
-                        if (g[nr][nc] !== null && g[nr][nc] !== w[i]) return false;
+                        if (g[nr][nc] && g[nr][nc] !== w[i]) return false;
                     }
                     return true;
                 };
-
                 const place = (w, r, c, d, g) => {
-                    for (let i=0; i<w.length; i++) {
-                        g[r + i*d[0]][c + i*d[1]] = w[i];
-                    }
+                    for (let i=0; i<w.length; i++) g[r + i*d[0]][c + i*d[1]] = w[i];
                 };
 
-                // === RENDER ===
-                const render = (g) => {
+                // === RENDER GRID ===
+                const render = g => {
                     grid.innerHTML = '';
                     for (let r=0; r<SIZE; r++) {
                         for (let c=0; c<SIZE; c++) {
@@ -125,7 +112,6 @@
                     document.onmouseup = document.ontouchend = endSelect;
                     document.onmousemove = document.ontouchmove = moveSelect;
                 };
-
                 const startSelect = e => {
                     e.preventDefault();
                     selecting = true;
@@ -136,7 +122,6 @@
                         cell(p.r, p.c)?.classList.add('cell-highlight');
                     }
                 };
-
                 const moveSelect = e => {
                     if (!selecting) return;
                     e.preventDefault();
@@ -149,20 +134,17 @@
                         path.forEach(pt => cell(pt.r, pt.c)?.classList.add('cell-highlight'));
                     }
                 };
-
                 const endSelect = () => {
                     if (selecting && path.length >= 2) check(path);
                     clearHighlight();
                     selecting = false;
                     path = [];
                 };
-
                 const coord = e => {
                     const t = e.touches ? document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) : e.target;
                     if (!t?.classList.contains('grid-cell')) return null;
                     return { r: +t.dataset.row, c: +t.dataset.col };
                 };
-
                 const getPath = (r1,c1,r2,c2) => {
                     const dr = Math.sign(r2-r1), dc = Math.sign(c2-c1);
                     const ar = Math.abs(r2-r1), ac = Math.abs(c2-c1);
@@ -177,18 +159,17 @@
                     }
                     return p;
                 };
-
                 const clearHighlight = () => document.querySelectorAll('.cell-highlight').forEach(el => el.classList.remove('cell-highlight'));
 
-                const check = (p) => {
+                // === CHECK WORD ===
+                const check = p => {
                     const w = p.map(pt => cell(pt.r, pt.c).textContent).join('');
                     const rev = w.split('').reverse().join('');
-                    if ( WORDS.includes(w) || WORDS.includes(rev) ) {
+                    if (WORDS.includes(w) || WORDS.includes(rev)) {
                         const word = WORDS.find(x => x===w || x===rev);
                         if (word && !word.solved) {
                             word.solved = true;
-                            found++;
-                            score++;
+                            found++; score++;
                             p.forEach(pt => {
                                 const el = cell(pt.r, pt.c);
                                 el.classList.remove('cell-highlight');
@@ -205,7 +186,7 @@
                     wordsEl.textContent = `${found} / ${WORDS.length}`;
                 };
 
-                // === END ===
+                // === END GAME ===
                 const end = won => {
                     clearInterval(interval);
                     grid.onmousedown = grid.ontouchstart = null;
@@ -215,29 +196,18 @@
 
                 // === RESULT MODAL ===
                 const showResult = (title, msg) => {
-                    const champ = score > 15 ? '<div class="mt-2 text-2xl font-bold text-yellow-400">YOU ARE A PUZZLE CHAMP!</div>' : '';
+                    const champ = score > 15 ? '<div class="mt-2 text-2xl font-bold text-yellow-400">🏆 YOU ARE A PUZZLE CHAMP! 🏆</div>' : '';
                     document.getElementById('modal-heading').innerHTML = title + champ;
                     document.getElementById('modal-message').textContent = msg;
                     document.getElementById('modal-score').textContent = score;
                     document.getElementById('modal-solved-words').textContent = found;
                     document.getElementById('score-modal').classList.remove('hidden');
-
-                    const share = document.getElementById('share-container');
-                    share.innerHTML = '<button disabled class="bg-gray-500 text-white py-2 px-4 rounded">Preparing...</button>';
-                    setTimeout(() => {
-                        const txt = `I just CRUSHED ${score} in Soundness Word Puzzle! Built by Angelmykl. Brain on fire. Can YOU beat my score? ${location.href} #WordPuzzle`;
-                        share.innerHTML = `
-                            <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(txt)}" target="_blank"
-                               class="inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8]">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                                Share on X
-                            </a>`;
-                    }, 500);
                 };
 
                 // === START GAME ===
                 window.startGame = () => {
                     closeModal();
+                    hideResult();
                     score = found = 0;
                     WORDS.forEach(w => w.solved = false);
                     gridData = build();
@@ -248,50 +218,34 @@
                     startTimer();
                 };
 
-                // === RESET GAME (FIXED) ===
-window.resetGame = () => {
-    clearInterval(interval);
-    timeLeft = TIME;
-    timer.textContent = fmt(timeLeft);
-    score = found = 0;
-    WORDS.forEach(w => w.solved = false);
-    grid.innerHTML = '';
-    // Rebuild empty grid
-    for (let r = 0; r < SIZE; r++) {
-        for (let c = 0; c < SIZE; c++) {
-            const el = document.createElement('div');
-            el.className = 'grid-cell';
-            el.dataset.row = r;
-            el.dataset.col = c;
-            grid.appendChild(el);
-        }
-    }
-    hideResult();
-    openModal();
-    newGameBtn.classList.remove('hidden');
-    playAgainBtn.classList.add('hidden');
-    update();
-};
+                // === RESET GAME / PLAY AGAIN ===
+                window.resetGame = () => {
+                    hideResult();
+                    closeModal();
+                    score = found = 0;
+                    WORDS.forEach(w => w.solved = false);
+                    gridData = build();
+                    render(gridData);
+                    update();
+                    startTimer();
+                };
 
                 // === BUTTONS ===
                 if (startBtn) startBtn.onclick = window.startGame;
                 if (newGameBtn) newGameBtn.onclick = window.startGame;
                 if (playAgainBtn) playAgainBtn.onclick = window.resetGame;
 
-                // === INIT ===
                 wordsEl.textContent = `0 / ${WORDS.length}`;
                 openModal();
 
             } catch (e) {
-                console.error("Game failed:", e);
+                console.error("Init failed:", e);
             }
-        }, 600);
+        }, 500);
     };
 
-    // Run after DOM + wallet scripts
-    if (document.readyState === 'loading') {
+    if (document.readyState === 'loading')
         document.addEventListener('DOMContentLoaded', safeInit);
-    } else {
+    else
         safeInit();
-    }
 })();
