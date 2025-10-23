@@ -1,6 +1,5 @@
 // === SAFE WRAPPER TO AVOID WALLET CRASHES ===
 (function () {
-    // Wait for DOM + avoid inpage.js errors
     const initGame = () => {
         try {
             // === ELEMENTS ===
@@ -28,18 +27,18 @@
             let wordsSolved = 0;
             let isSelecting = false;
             let selectionCells = [];
-            let solvedCells = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(false));
+            let solvedCells = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(false));
             let startCoords = null;
 
             // === WORDS (31) ===
-            const allWordsBase = [
+            const allWords = [
                 "SUCCESSFUL", "PROOF", "SUI", "WALRUS", "LINERA", "LIGERO",
                 "BLOCKCHAIN", "ZERO", "KNOWLEDGE", "ZIPPY", "BLU", "BLOOP",
                 "WAVA", "ECHO", "GENERATE", "SUBMITTED", "PHAXY", "WENDY",
                 "OXY", "KARAOKE", "MOJA", "LUTO",
                 "CRYPTOGRAPHY", "VERIFICATION", "LAYER", "DECENTRALIZED",
                 "SCALABLE", "DATA", "ROCKY", "MAHDI", "QUANTUM"
-            ].map((w, i) => ({ word: w, id: i + 1, solved: false }));
+            ];
 
             const DIRECTIONS = [
                 { dr: 0, dc: 1 }, { dr: 0, dc: -1 },
@@ -67,16 +66,19 @@
                     timeRemaining--;
                     timerDisplay.textContent = formatTime(timeRemaining);
                     if (timeRemaining <= 0) endGame(false);
+                    else if (timeRemaining <= 10) timerDisplay.classList.add('animate-pulse', 'text-red-700');
                 }, 1000);
             };
 
-            // === GRID GENERATION ===
-            const generateWordSearch = (words) => {
+            // === GRID GENERATION (FIXED) ===
+            const generateWordSearch = () => {
                 const grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
-                words.forEach(w => {
+
+                // Place each word
+                allWords.forEach(word => {
                     let placed = false;
-                    let tries = 0;
-                    while (!placed && tries < 1000) {
+                    let attempts = 0;
+                    while (!placed && attempts < 1000) {
                         const r = Math.floor(Math.random() * GRID_SIZE);
                         const c = Math.floor(Math.random() * GRID_SIZE);
                         const dir = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
@@ -84,18 +86,26 @@
                             placeWord(word, r, c, dir, grid);
                             placed = true;
                         }
-                        tries++;
+                        attempts++;
                     }
                 });
-                for (let r = 0; r < GRID_SIZE; r++)
-                    for (let c = 0; c < GRID_SIZE; c++)
-                        if (grid[r][c] === null) grid[r][c] = getRandomLetter();
+
+                // Fill empty cells
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        if (grid[r][c] === null) {
+                            grid[r][c] = getRandomLetter();
+                        }
+                    }
+                }
+
                 return grid;
             };
 
             const canPlace = (word, r, c, dir, grid) => {
                 for (let i = 0; i < word.length; i++) {
-                    const nr = r + i * dir.dr, nc = c + i * dir.dc;
+                    const nr = r + i * dir.dr;
+                    const nc = c + i * dir.dc;
                     if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) return false;
                     if (grid[nr][nc] !== null && grid[nr][nc] !== word[i]) return false;
                 }
@@ -104,7 +114,9 @@
 
             const placeWord = (word, r, c, dir, grid) => {
                 for (let i = 0; i < word.length; i++) {
-                    grid[r + i * dir.dr][c + i * dir.dc] = word[i];
+                    const nr = r + i * dir.dr;
+                    const nc = c + i * dir.dc;
+                    grid[nr][nc] = word[i];
                 }
             };
 
@@ -160,7 +172,9 @@
             };
 
             const onSelectEnd = () => {
-                if (isSelecting && selectionCells.length >= 2) checkWord(selectionCells);
+                if (isSelecting && selectionCells.length >= 2) {
+                    checkWord(selectionCells);
+                }
                 clearHighlight();
                 isSelecting = false;
                 selectionCells = [];
@@ -176,8 +190,9 @@
             const getPath = (r1, c1, r2, c2) => {
                 const dr = Math.sign(r2 - r1), dc = Math.sign(c2 - c1);
                 const distR = Math.abs(r2 - r1), distC = Math.abs(c2 - c1);
-                if (dr !== 0 && dc !== 0 && distR !== distC) return [{ r: r1, c: c1 }];
-                if (dr === 0 && dc === 0) return [{ r: r1, c: c1 }];
+                if ((dr !== 0 && dc !== 0 && distR !== distC) || (dr === 0 && dc === 0)) {
+                    return [{ r: r1, c: c1 }];
+                }
                 const path = [];
                 let r = r1, c = c1;
                 while (true) {
@@ -194,31 +209,33 @@
             const checkWord = (path) => {
                 const word = path.map(p => getCell(p.r, p.c).textContent).join('');
                 const rev = word.split('').reverse().join('');
-                const found = allWordsBase.find(w => !w.solved && (w.word === word || w.word === rev));
-                if (found) {
-                    found.solved = true;
-                    wordsSolved++;
-                    score++;
-                    path.forEach(p => {
-                        const cell = getCell(p.r, p.c);
-                        cell.classList.remove('cell-highlight');
-                        cell.classList.add('cell-solved');
-                    });
-                    updateScore();
-                    if (wordsSolved === allWordsBase.length) endGame(true);
+                if (allWords.includes(word) || allWords.includes(rev)) {
+                    const foundWord = allWords.find(w => w === word || w === rev);
+                    if (foundWord && !foundWord.solved) {
+                        foundWord.solved = true;
+                        wordsSolved++;
+                        score++;
+                        path.forEach(p => {
+                            const cell = getCell(p.r, p.c);
+                            cell.classList.remove('cell-highlight');
+                            cell.classList.add('cell-solved');
+                        });
+                        updateScore();
+                        if (wordsSolved === allWords.length) endGame(true);
+                    }
                 }
             };
 
             const updateScore = () => {
                 scoreDisplay.textContent = score;
-                wordsSolvedDisplay.textContent = `${wordsSolved} / ${allWordsBase.length}`;
+                wordsSolvedDisplay.textContent = `${wordsSolved} / ${allWords.length}`;
             };
 
             // === END GAME ===
             const endGame = (won) => {
                 clearInterval(timerInterval);
                 detachEvents();
-                const msg = won ? `All words found!` : `Time's up! Found ${wordsSolved}/31`;
+                const msg = won ? `All ${allWords.length} words found!` : `Time's up! Found ${wordsSolved}/${allWords.length}`;
                 showResult(won ? "PUZZLE SOLVED!" : "TIME'S UP!", msg);
             };
 
@@ -254,8 +271,8 @@
             window.startGame = () => {
                 closeStartModal();
                 score = 0; wordsSolved = 0;
-                allWordsBase.forEach(w => w.solved = false);
-                const grid = generateWordSearch(allWordsBase.map(w => w.word));
+                allWords.forEach(w => w.solved = false);
+                const grid = generateWordSearch();
                 renderGrid(grid);
                 updateScore();
                 startGameBtn.classList.add('hidden');
@@ -272,12 +289,12 @@
             };
 
             // === BUTTONS ===
-            startChallengeBtn.onclick = window.startGame;
-            startGameBtn.onclick = window.startGame;
-            playAgainBtn.onclick = window.resetGame;
+            if (startChallengeBtn) startChallengeBtn.onclick = window.startGame;
+            if (startGameBtn) startGameBtn.onclick = window.startGame;
+            if (playAgainBtn) playAgainBtn.onclick = window.resetGame;
 
             // === INIT ===
-            wordsSolvedDisplay.textContent = `0 / ${allWordsBase.length}`;
+            wordsSolvedDisplay.textContent = `0 / ${allWords.length}`;
             openStartModal();
 
         } catch (err) {
@@ -285,10 +302,10 @@
         }
     };
 
-    // Wait for DOM + avoid inpage.js
+    // Wait for DOM + avoid wallet scripts
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => setTimeout(initGame, 300));
+        document.addEventListener('DOMContentLoaded', () => setTimeout(initGame, 500));
     } else {
-        setTimeout(initGame, 300);
+        setTimeout(initGame, 500);
     }
 })();
