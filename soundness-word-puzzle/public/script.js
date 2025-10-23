@@ -87,7 +87,11 @@ function showModal(heading, message) {
 
     // Share button for ALL players
     const tweetText = encodeURIComponent(
-        `I just CRUSHED ${score} in Soundness Word Puzzle Built by @Angelmykl! Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`
+        `I just CRUSHED ${score} in Soundness Word Puzzle Built by @Angelmykl! Brain on fire. Can YOU beat my score? 
+        
+        ${gameUrl} 
+        
+        #WordPuzzle`
     );
     const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
 
