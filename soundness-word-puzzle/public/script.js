@@ -77,42 +77,8 @@ function closeStartModal() {
     document.getElementById('start-modal').classList.add('hidden');
 }
 
-function showModal(heading, message) {
-    const averageScore = Math.floor(allWordsBase.length / 2); // 15
-    const timeUsed = TIME_LIMIT_SECONDS - timeRemaining;
-    const mins = String(Math.floor(timeUsed / 60)).padStart(2, '0');
-    const secs = String(timeUsed % 60).padStart(2, '0');
-    const timeStr = `${mins}:${secs}`;
-    const gameUrl = window.location.href;
-
-    // Share button for ALL players
-    const tweetText = encodeURIComponent(
-        `I just CRUSHED ${score} in Soundness Word Puzzle! Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`
-    );
-    const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
-
-    const shareButton = `
-        <a href="${tweetUrl}" target="_blank" rel="noopener" 
-           class="mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-2 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-            Share on X
-        </a>`;
-
-    // Champ message ONLY if score > 15
-    let champMessage = '';
-    if (score > averageScore) {
-        champMessage = '<div class="mt-4 text-3xl font-bold text-yellow-500 flex items-center justify-center gap-2">YOU ARE A PUZZLE CHAMP! 🏆</div>';
-    }
-
-    document.getElementById('modal-heading').innerHTML = heading + champMessage;
-    document.getElementById('modal-message').innerHTML = message + shareButton;
-    document.getElementById('modal-score').textContent = score;
-    document.getElementById('modal-solved-words').textContent = wordsSolved;
-    document.getElementById('modal-total-words').textContent = allWordsBase.length;
-    document.getElementById('score-modal').classList.remove('hidden');
-}
+Step 2: Update public/script.js
+Find this function (search for function showModal):
 
 function hideModal() {
     document.getElementById('score-modal').classList.add('hidden');
