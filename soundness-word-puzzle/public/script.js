@@ -70,97 +70,96 @@ function getCoordinates(event) {
 
 // Modal Functions
 function openStartModal() {
-    document.getElementById('start-modal').classList.remove('hidden');
+    const modal = document.getElementById('start-modal');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closeStartModal() {
-    document.getElementById('start-modal').classList.add('hidden');
+    const modal = document.getElementById('start-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function hideModal() {
+    const modal = document.getElementById('score-modal');
+    if (modal) modal.classList.add('hidden');
 }
 
 function showModal(heading, message) {
     const averageScore = 15;
     const gameUrl = window.location.href;
 
-    // Add "PUZZLE CHAMP!" only if score > 15
     let champMessage = '';
     if (score > averageScore) {
-        champMessage = '<div class="mt-4 text-3xl font-bold text-yellow-500 flex items-center justify-center gap-2">YOU ARE A PUZZLE CHAMP!</div>';
+        champMessage = '<div class="mt-4 text-3xl font-bold text-yellow-500 flex items-center justify-center gap-2">YOU ARE A PUZZLE CHAMP! 🏆</div>';
     }
 
-    // Update modal content
-    document.getElementById('modal-heading').innerHTML = heading + champMessage;
-    document.getElementById('modal-message').innerHTML = message;
-    document.getElementById('modal-score').textContent = score;
-    document.getElementById('modal-solved-words').textContent = wordsSolved;
-    document.getElementById('modal-total-words').textContent = allWordsBase.length;
-    document.getElementById('score-modal').classList.remove('hidden');
+    const modalHeading = document.getElementById('modal-heading');
+    const modalMessage = document.getElementById('modal-message');
+    const modalScore = document.getElementById('modal-score');
+    const modalSolvedWords = document.getElementById('modal-solved-words');
+    const modalTotalWords = document.getElementById('modal-total-words');
+    const scoreModal = document.getElementById('score-modal');
+
+    if (modalHeading) modalHeading.innerHTML = heading + champMessage;
+    if (modalMessage) modalMessage.innerHTML = message;
+    if (modalScore) modalScore.textContent = score;
+    if (modalSolvedWords) modalSolvedWords.textContent = wordsSolved;
+    if (modalTotalWords) modalTotalWords.textContent = allWordsBase.length;
+    if (scoreModal) scoreModal.classList.remove('hidden');
 
     const shareContainer = document.getElementById('share-container');
-    shareContainer.innerHTML = '<button class="mt-5 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg opacity-70" disabled>Preparing photo...</button>';
+    if (shareContainer) {
+        shareContainer.innerHTML = '<button class="mt-5 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg opacity-70" disabled>Preparing photo...</button>';
 
-    // TAKE SCREENSHOT
-    html2canvas(document.body, { scale: 2, useCORS: true }).then(canvas => {
-        canvas.toBlob(async (blob) => {
-            const formData = new FormData();
-            formData.append('image', blob, 'soundness-score.png');
+        html2canvas(document.body, { scale: 2, useCORS: true }).then(canvas => {
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('image', blob, 'soundness-score.png');
 
-            try {
-                // Upload to img1 (free, no key needed)
-                const response = await fetch('https://api.imgbb.com/1/upload?key=5e3f7c7d5a6b4c9d8e1f2a3b4c5d6e7f', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
+                try {
+                    const response = await fetch('https://api.imgbb.com/1/upload?key=5e3f7c7d5a6b4c9d8e1f2a3b4c5d6e7f', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
 
-                if (data.success) {
-                    const imageUrl = data.data.url;
-                    const tweetText = `I just CRUSHED ${score} in Soundness Word Puzzle! Built by Angelmykl. Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`;
+                    if (data.success) {
+                        const imageUrl = data.data.url;
+                        const tweetText = `I just CRUSHED ${score} in Soundness Word Puzzle! Built by Angelmykl. Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`;
+                        const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${imageUrl}`;
 
-                    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${imageUrl}`;
-
-                    shareContainer.innerHTML = `
-                        <a href="${tweetUrl}" target="_blank" rel="noopener"
-                           class="mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                            </svg>
-                            Share on X with Photo!
-                        </a>`;
-                } else {
+                        shareContainer.innerHTML = `
+                            <a href="${tweetUrl}" target="_blank" rel="noopener"
+                               class="mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                </svg>
+                                Share on X with Photo!
+                            </a>`;
+                    } else {
+                        fallbackShare();
+                    }
+                } catch (err) {
                     fallbackShare();
                 }
-            } catch (err) {
-                fallbackShare();
-            }
+            });
+        }).catch(() => {
+            fallbackShare();
         });
-    }).catch(() => {
-        fallbackShare();
-    });
 
-    function fallbackShare() {
-        const tweetText = `I just CRUSHED ${score} in Soundness Word Puzzle! Built by Angelmykl. Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`;
-        const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
-        shareContainer.innerHTML = `
-            <a href="${tweetUrl}" target="_blank" rel="noopener"
-               class="mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-                Share on X (No Photo)
-            </a>`;
+        function fallbackShare() {
+            const tweetText = `I just CRUSHED ${score} in Soundness Word Puzzle! Built by Angelmykl. Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`;
+            const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+            shareContainer.innerHTML = `
+                <a href="${tweetUrl}" target="_blank" rel="noopener"
+                   class="mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    Share on X (No Photo)
+                </a>`;
+        }
     }
-}
-
-    function openTwitter(text) {
-        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-        window.open(url, '_blank', 'width=600,height=400');
-    }
-
-    shareContainer.appendChild(shareBtn);
-}
-
-function hideModal() {
-    document.getElementById('score-modal').classList.add('hidden');
 }
 
 // Core Game Logic
@@ -414,33 +413,10 @@ function startTimer() {
 
 // Initialization
 window.onload = () => {
-    // 1. Set initial display
     wordsSolvedDisplay.textContent = `0 / ${allWordsBase.length}`;
     const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE).fill('<div class="grid-cell"></div>').join('');
     gridElement.innerHTML = emptyGridHtml;
-
-    // 2. Wait for DOM to be fully ready
-    setTimeout(() => {
-        // 3. Now attach button click
-        const startChallengeBtn = document.getElementById('start-challenge-btn');
-        if (startChallengeBtn) {
-            startChallengeBtn.onclick = () => {
-                closeStartModal();
-                startGame();
-            };
-            console.log("Start Challenge button attached!");
-        } else {
-            console.error("ERROR: #start-challenge-btn NOT FOUND!");
-        }
-
-        // 4. Now show modal
-        openStartModal();
-
-        // 5. Other buttons
-        startGameBtn.onclick = () => {
-            closeStartModal();
-            startGame();
-        };
-        playAgainBtn.onclick = resetGame;
-    }, 100); // Small delay ensures DOM is ready
+    openStartModal();
+    startGameBtn.onclick = () => { closeStartModal(); startGame(); };
+    playAgainBtn.onclick = resetGame;
 };
