@@ -1,310 +1,383 @@
-// === IMMEDIATE SAFE EXECUTION — AVOIDS METAMASK CRASH ===
-(() => {
-    // Wait for DOM + delay to bypass wallet injection
-    const safeInit = () => {
-        setTimeout(() => {
-            try {
-                // === ELEMENTS ===
-                const grid = document.getElementById('crossword-grid');
-                const timer = document.getElementById('timer-display');
-                const scoreEl = document.getElementById('score-display');
-                const wordsEl = document.getElementById('words-solved-display');
-                const startBtn = document.getElementById('start-challenge-btn'); // Start Challenge button
-                const newGameBtn = document.getElementById('start-game-btn');
-                
-                // Corrected/Renamed button elements for clarity from previous fix:
-                const topPlayAgainBtn = document.getElementById('top-play-again-btn'); 
-                const modalPlayAgainBtn = document.getElementById('play-again-modal-btn'); 
+// Grid configuration
+const GRID_SIZE = 17;
+const TIME_LIMIT_SECONDS = 210;
 
-                if (!grid || !timer) {
-                    console.error("DOM elements missing");
-                    return;
+// Game State
+let timerInterval = null;
+let timeRemaining = TIME_LIMIT_SECONDS;
+let score = 0;
+let wordsSolved = 0;
+let isSelecting = false;
+let selectionCells = [];
+let wordLocations = [];
+let solvedCells = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(false));
+let startCoords = null;
+
+// Elements
+const gridElement = document.getElementById('crossword-grid');
+const timerDisplay = document.getElementById('timer-display');
+const scoreDisplay = document.getElementById('score-display');
+const wordsSolvedDisplay = document.getElementById('words-solved-display');
+const startGameBtn = document.getElementById('start-game-btn');
+const playAgainBtn = document.getElementById('play-again-btn');
+
+// Word List (31 words)
+const allWordsBase = [
+    "SUCCESSFUL", "PROOF", "SUI", "WALRUS", "LINERA", "LIGERO",
+    "BLOCKCHAIN", "ZERO", "KNOWLEDGE", "ZIPPY", "BLU", "BLOOP",
+    "WAVA", "ECHO", "GENERATE", "SUBMITTED", "PHAXY", "WENDY",
+    "OXY", "KARAOKE", "MOJA", "LUTO",
+    "CRYPTOGRAPHY", "VERIFICATION", "LAYER", "DECENTRALIZED",
+    "SCALABLE", "DATA", "ROCKY", "MAHDI", "QUANTUM"
+].map((w, id) => ({ word: w.toUpperCase(), id: id + 1, solved: false }));
+
+const DIRECTIONS = [
+    { dr: 0, dc: 1, name: 'ACROSS' },
+    { dr: 0, dc: -1, name: 'ACROSS_REV' },
+    { dr: 1, dc: 0, name: 'DOWN' },
+    { dr: -1, dc: 0, name: 'DOWN_REV' },
+    { dr: 1, dc: 1, name: 'DIAG_DR' },
+    { dr: 1, dc: -1, name: 'DIAG_DL' },
+    { dr: -1, dc: 1, name: 'DIAG_UR' },
+    { dr: -1, dc: -1, name: 'DIAG_UL' }
+];
+
+// Utility Functions
+function getRandomLetter() {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    return alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+}
+
+function getCellElement(r, c) {
+    return document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+}
+
+function getCoordinates(event) {
+    let target;
+    if (event.touches) {
+        if (event.touches.length === 0) return null;
+        const touch = event.touches[0];
+        target = document.elementFromPoint(touch.clientX, touch.clientY);
+    } else {
+        target = event.target.closest('.grid-cell');
+    }
+    if (!target || !target.classList.contains('grid-cell')) return null;
+    const r = parseInt(target.dataset.row);
+    const c = parseInt(target.dataset.col);
+    if (isNaN(r) || isNaN(c)) return null;
+    return { r, c, cell: target };
+}
+
+// Modal Functions
+function openStartModal() {
+    document.getElementById('start-modal').classList.remove('hidden');
+}
+
+function closeStartModal() {
+    document.getElementById('start-modal').classList.add('hidden');
+}
+
+function showModal(heading, message) {
+    const averageScore = Math.floor(allWordsBase.length / 2); // 15
+    const timeUsed = TIME_LIMIT_SECONDS - timeRemaining;
+    const mins = String(Math.floor(timeUsed / 60)).padStart(2, '0');
+    const secs = String(timeUsed % 60).padStart(2, '0');
+    const timeStr = `${mins}:${secs}`;
+    const gameUrl = window.location.href;
+
+    // Share button for ALL players
+    const tweetText = encodeURIComponent(
+        `I just CRUSHED ${score} in Soundness Word Puzzle! Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`
+    );
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
+
+    const shareButton = `
+        <a href="${tweetUrl}" target="_blank" rel="noopener" 
+           class="mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-2 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            Share on X
+        </a>`;
+
+    // Champ message ONLY if score > 15
+    let champMessage = '';
+    if (score > averageScore) {
+        champMessage = '<div class="mt-4 text-3xl font-bold text-yellow-500 flex items-center justify-center gap-2">YOU ARE A PUZZLE CHAMP!</div>';
+    }
+
+    document.getElementById('modal-heading').innerHTML = heading + champMessage;
+    document.getElementById('modal-message').innerHTML = message + shareButton;
+    document.getElementById('modal-score').textContent = score;
+    document.getElementById('modal-solved-words').textContent = wordsSolved;
+    document.getElementById('modal-total-words').textContent = allWordsBase.length;
+    document.getElementById('score-modal').classList.remove('hidden');
+}
+
+function hideModal() {
+    document.getElementById('score-modal').classList.add('hidden');
+}
+
+// Core Game Logic
+function startGame() {
+    closeStartModal();
+    score = 0;
+    wordsSolved = 0;
+    wordLocations = [];
+    allWordsBase.forEach(w => w.solved = false);
+    solvedCells = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(false));
+    const generatedGrid = generateWordSearch(allWordsBase);
+    renderGrid(generatedGrid);
+    updateScoreDisplay();
+    startGameBtn.classList.add('hidden');
+    playAgainBtn.classList.remove('hidden');
+    startTimer();
+}
+
+function resetGame() {
+    clearInterval(timerInterval);
+    timeRemaining = TIME_LIMIT_SECONDS;
+    timerDisplay.textContent = formatTime(TIME_LIMIT_SECONDS);
+    score = 0;
+    wordsSolved = 0;
+    gridElement.innerHTML = '';
+    const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE).fill('<div class="grid-cell"></div>').join('');
+    gridElement.innerHTML = emptyGridHtml;
+    hideModal();
+    openStartModal();
+    updateScoreDisplay();
+}
+
+function updateScoreDisplay() {
+    scoreDisplay.textContent = score;
+    wordsSolvedDisplay.textContent = `${wordsSolved} / ${allWordsBase.length}`;
+}
+
+function endGame(isSolved) {
+    clearInterval(timerInterval);
+    gridElement.onmousedown = null;
+    gridElement.ontouchstart = null;
+    document.onmouseup = null;
+    document.ontouchend = null;
+    document.onmousemove = null;
+    document.ontouchmove = null;
+    const message = isSolved 
+        ? `You found all ${allWordsBase.length} words with ${formatTime(TIME_LIMIT_SECONDS - timeRemaining)} remaining!`
+        : `Time ran out! You found ${wordsSolved} of ${allWordsBase.length} words.`;
+    const heading = isSolved ? "PUZZLE SOLVED!" : "TIME'S UP!";
+    showModal(heading, message);
+    startGameBtn.classList.remove('hidden');
+    playAgainBtn.classList.add('hidden');
+}
+
+// Selection & Checking Logic
+function getPath(startR, startC, endR, endC) {
+    const dr = Math.sign(endR - startR);
+    const dc = Math.sign(endC - startC);
+    const dR_abs = Math.abs(endR - startR);
+    const dC_abs = Math.abs(endC - startC);
+    const isStraight = (dr === 0 && dC_abs >= 0) || 
+                       (dc === 0 && dR_abs >= 0) || 
+                       (dR_abs === dC_abs);
+    let path = [];
+    if (isStraight) {
+        let r = startR;
+        let c = startC;
+        while (true) {
+            path.push({ r, c });
+            if (r === endR && c === endC) break;
+            r += dr;
+            c += dc;
+            if (r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) break;
+        }
+    } else {
+        path.push({ r: startR, c: startC });
+    }
+    return path;
+}
+
+function onSelectStart(event) {
+    if (timerInterval === null) return;
+    event.preventDefault();
+    isSelecting = true;
+    clearHighlight();
+    let coords = getCoordinates(event);
+    if (coords) {
+        startCoords = coords;
+        selectionCells = [{ r: coords.r, c: coords.c }];
+        getCellElement(coords.r, coords.c)?.classList.add('cell-highlight');
+    }
+}
+
+function onSelectMove(event) {
+    if (!isSelecting || !startCoords) return;
+    event.preventDefault();
+    let coords = getCoordinates(event);
+    if (!coords) return;
+    const newPath = getPath(startCoords.r, startCoords.c, coords.r, coords.c);
+    if (newPath.length > 0) {
+        const lastNew = newPath[newPath.length - 1];
+        const lastOld = selectionCells[selectionCells.length - 1] || {};
+        if (lastNew.r !== lastOld.r || lastNew.c !== lastOld.c || newPath.length !== selectionCells.length) {
+            clearHighlight();
+            selectionCells = newPath;
+            selectionCells.forEach(coord => {
+                if (!getCellElement(coord.r, coord.c).classList.contains('cell-solved')) {
+                    getCellElement(coord.r, coord.c)?.classList.add('cell-highlight');
                 }
+            });
+        }
+    }
+}
 
-                // === CONFIG ===
-                const SIZE = 17;
-                const TIME = 210; // 3:30
-                const WORDS = [
-                    "SUCCESSFUL","PROOF","SUI","WALRUS","LINERA","LIGERO",
-                    "BLOCKCHAIN","ZERO","KNOWLEDGE","ZIPPY","BLU","BLOOP",
-                    "WAVA","ECHO","GENERATE","SUBMITTED","PHAXY","WENDY",
-                    "OXY","KARAOKE","MOJA","LUTO","CRYPTOGRAPHY","VERIFICATION",
-                    "LAYER","DECENTRALIZED","SCALABLE","DATA","ROCKY","MAHDI","QUANTUM"
-                ];
+function onSelectEnd() {
+    if (!isSelecting) return;
+    isSelecting = false;
+    if (selectionCells.length >= 2) {
+        checkSelection(selectionCells);
+    }
+    clearHighlight();
+    selectionCells = [];
+    startCoords = null;
+}
 
-                // === STATE ===
-                let interval = null;
-                let timeLeft = TIME;
-                let score = 0;
-                let found = 0;
-                let selecting = false;
-                let path = [];
-                let gridData = null;
+function clearHighlight() {
+    document.querySelectorAll('.grid-cell.cell-highlight').forEach(cell => {
+        cell.classList.remove('cell-highlight');
+    });
+}
 
-                // === DIRECTIONS ===
-                const DIRS = [
-                    [0,1],[0,-1],[1,0],[-1,0],
-                    [1,1],[1,-1],[-1,1],[-1,-1]
-                ];
+function checkSelection(path) {
+    const selectedWord = path.map(coord => getCellElement(coord.r, coord.c).textContent).join('');
+    const reversedWord = [...selectedWord].reverse().join('');
+    let wordFound = allWordsBase.find(w => !w.solved && (w.word === selectedWord || w.word === reversedWord));
+    if (wordFound) {
+        wordFound.solved = true;
+        wordsSolved++;
+        score++;
+        const correctPath = (wordFound.word === selectedWord) ? path : [...path].reverse();
+        correctPath.forEach(coord => {
+            const cell = getCellElement(coord.r, coord.c);
+            cell.classList.remove('cell-highlight');
+            cell.classList.add('cell-solved');
+            solvedCells[coord.r][coord.c] = true;
+        });
+        updateScoreDisplay();
+        if (wordsSolved === allWordsBase.length) {
+            endGame(true);
+        }
+    }
+}
 
-                // === UTILS ===
-                const randLetter = () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random()*26)];
-                const cell = (r,c) => document.querySelector([data-row="${r}"][data-col="${c}"]);
+// Word Search Generation
+function attemptPlacement(word, r, c, direction, grid) {
+    const len = word.length;
+    const { dr, dc } = direction;
+    for (let i = 0; i < len; i++) {
+        const curR = r + i * dr;
+        const curC = c + i * dc;
+        if (curR < 0 || curR >= GRID_SIZE || curC < 0 || curC >= GRID_SIZE) {
+            return false;
+        }
+        if (grid[curR][curC] !== null && grid[curR][curC] !== word[i]) {
+            return false;
+        }
+    }
+    for (let i = 0; i < len; i++) {
+        grid[r + i * dr][c + i * dc] = word[i];
+    }
+    return true;
+}
 
-                // === MODALS ===
-                const openModal = () => document.getElementById('start-modal')?.classList.remove('hidden');
-                const closeModal = () => document.getElementById('start-modal')?.classList.add('hidden');
-                const hideResult = () => document.getElementById('score-modal')?.classList.add('hidden');
-                
-                // Expose hideResult as hideModal (required by the HTML)
-                window.hideModal = hideResult;
-
-                // === TIMER ===
-                const fmt = s => ${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')};
-                const startTimer = () => {
-                    clearInterval(interval);
-                    timeLeft = TIME;
-                    timer.textContent = fmt(timeLeft);
-                    interval = setInterval(() => {
-                        timeLeft--;
-                        timer.textContent = fmt(timeLeft);
-                        if (timeLeft <= 0) end(false);
-                    }, 1000);
-                };
-
-                // === GRID BUILDER (FIXED) ===
-                const build = () => {
-                    const g = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
-                    WORDS.forEach(w => {
-                        let placed = false, tries = 0;
-                        while (!placed && tries < 1000) {
-                            const r = Math.floor(Math.random()*SIZE);
-                            const c = Math.floor(Math.random()*SIZE);
-                            const d = DIRS[Math.floor(Math.random()*DIRS.length)];
-                            if (canFit(w, r, c, d, g)) {
-                                place(w, r, c, d, g);
-                                placed = true;
-                            }
-                            tries++;
-                        }
-                    });
-                    for (let r=0; r<SIZE; r++)
-                        for (let c=0; c<SIZE; c++)
-                            if (g[r][c] === null) g[r][c] = randLetter();
-                    return g;
-                };
-
-                const canFit = (w, r, c, d, g) => {
-                    for (let i=0; i<w.length; i++) {
-                        const nr = r + i*d[0], nc = c + i*d[1];
-                        if (nr<0 || nr>=SIZE || nc<0 || nc>=SIZE) return false;
-                        if (g[nr][nc] !== null && g[nr][nc] !== w[i]) return false;
-                    }
-                    return true;
-                };
-
-                const place = (w, r, c, d, g) => {
-                    for (let i=0; i<w.length; i++) {
-                        g[r + i*d[0]][c + i*d[1]] = w[i];
-                    }
-                };
-
-                // === RENDER ===
-                const render = (g) => {
-                    grid.innerHTML = '';
-                    for (let r=0; r<SIZE; r++) {
-                        for (let c=0; c<SIZE; c++) {
-                            const el = document.createElement('div');
-                            el.className = 'grid-cell';
-                            el.textContent = g[r][c];
-                            el.dataset.row = r;
-                            el.dataset.col = c;
-                            grid.appendChild(el);
-                        }
-                    }
-                    attachEvents();
-                };
-
-                // === SELECTION ===
-                const attachEvents = () => {
-                    grid.onmousedown = grid.ontouchstart = startSelect;
-                    document.onmouseup = document.ontouchend = endSelect;
-                    document.onmousemove = document.ontouchmove = moveSelect;
-                };
-
-                const startSelect = e => {
-                    e.preventDefault();
-                    selecting = true;
-                    clearHighlight();
-                    const p = coord(e);
-                    if (p) {
-                        path = [p];
-                        cell(p.r, p.c)?.classList.add('cell-highlight');
-                    }
-                };
-
-                const moveSelect = e => {
-                    if (!selecting) return;
-                    e.preventDefault();
-                    const p = coord(e);
-                    if (!p) return;
-                    const newPath = getPath(path[0].r, path[0].c, p.r, p.c);
-                    if (newPath.length !== path.length) {
-                        clearHighlight();
-                        path = newPath;
-                        path.forEach(pt => cell(pt.r, pt.c)?.classList.add('cell-highlight'));
-                    }
-                };
-
-                const endSelect = () => {
-                    if (selecting && path.length >= 2) check(path);
-                    clearHighlight();
-                    selecting = false;
-                    path = [];
-                };
-
-                const coord = e => {
-                    const t = e.touches ? document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) : e.target;
-                    if (!t?.classList.contains('grid-cell')) return null;
-                    return { r: +t.dataset.row, c: +t.dataset.col };
-                };
-
-                const getPath = (r1,c1,r2,c2) => {
-                    const dr = Math.sign(r2-r1), dc = Math.sign(c2-c1);
-                    const ar = Math.abs(r2-r1), ac = Math.abs(c2-c1);
-                    if ((dr && dc && ar !== ac) || (!dr && !dc)) return [{r:r1,c:c1}];
-                    const p = [];
-                    let r = r1, c = c1;
-                    while (true) {
-                        p.push({r,c});
-                        if (r===r2 && c===c2) break;
-                        r += dr; c += dc;
-                        if (r<0 || r>=SIZE || c<0 || c>=SIZE) break;
-                    }
-                    return p;
-                };
-
-                const clearHighlight = () => document.querySelectorAll('.cell-highlight').forEach(el => el.classList.remove('cell-highlight'));
-
-                const check = (p) => {
-                    const w = p.map(pt => cell(pt.r, pt.c).textContent).join('');
-                    const rev = w.split('').reverse().join('');
-                    if ( WORDS.includes(w) || WORDS.includes(rev) ) {
-                        const word = WORDS.find(x => x===w || x===rev);
-                        if (word && !word.solved) {
-                            word.solved = true;
-                            found++;
-                            score++;
-                            p.forEach(pt => {
-                                const el = cell(pt.r, pt.c);
-                                el.classList.remove('cell-highlight');
-                                el.classList.add('cell-solved');
-                            });
-                            update();
-                            if (found === WORDS.length) end(true);
-                        }
-                    }
-                };
-
-                const update = () => {
-                    scoreEl.textContent = score;
-                    wordsEl.textContent = ${found} / ${WORDS.length};
-                };
-
-                // === END ===
-                const end = (won) => {
-                    clearInterval(interval);
-                    grid.onmousedown = grid.ontouchstart = null;
-                    document.onmouseup = document.ontouchend = document.onmousemove = document.ontouchmove = null;
-                    showResult(
-                        won ? "PUZZLE SOLVED!" : "TIME'S UP!",
-                        won ? "All words found!" : Found ${found}/${WORDS.length}
-                    );
-                };
-
-                // === RESULT MODAL ===
-                const showResult = (title, msg) => {
-                    const champ =
-                        score > Math.floor(WORDS.length / 2)
-                        ? '<div class="mt-2 text-2xl font-bold text-yellow-400">🏆 YOU ARE A PUZZLE CHAMP! 🏆</div>'
-                        : "";
-                    document.getElementById("modal-heading").innerHTML = title + champ;
-                    document.getElementById("modal-message").textContent = msg;
-                    document.getElementById("modal-score").textContent = score;
-                    document.getElementById("modal-solved-words").textContent = found;
-                    document.getElementById("score-modal").classList.remove("hidden");
-
-                    // Keep Share on X
-                    const share = document.getElementById("share-container");
-                    share.innerHTML = `
-                        <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                        I just scored ${score} points in the Soundness Puzzle! Can you beat me? ${location.href} #WordPuzzle
-                        )}" target="_blank"
-                        class="inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8]">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                        </svg>
-                        Share on X
-                        </a>
-                    `;
-                };
-
-                // === START GAME ===
-                window.startGame = () => {
-                    document.getElementById("start-modal")?.classList.add("hidden");
-                    document.getElementById("score-modal")?.classList.add("hidden");
-                    score = found = 0;
-                    WORDS.forEach((w) => (w.solved = false));
-                    gridData = build();
-                    render(gridData);
-                    update();
-                    newGameBtn.classList.add("hidden");
-                    topPlayAgainBtn.classList.remove("hidden"); 
-                    startTimer();
-                };
-
-                // === RESET GAME (PLAY AGAIN) ===
-                window.resetGame = () => {
-                    clearInterval(interval);
-                    timeLeft = TIME;
-                    timer.textContent = fmt(timeLeft);
-                    score = found = 0;
-                    WORDS.forEach((w) => (w.solved = false));
-
-                    // Hide modal first
-                    hideResult();
-
-                    // Rebuild grid and start new game instantly
-                    gridData = build();
-                    render(gridData);
-                    update();
-                    startTimer();
-                };
-
-                // === BUTTON EVENTS ===
-                if (startBtn) {
-                    // This is the "Start Challenge" button in the welcome modal
-                    startBtn.onclick = window.startGame; 
-                }
-                if (newGameBtn) {
-                    // This is the "Start New Game" button in the top bar
-                    newGameBtn.onclick = window.startGame;
-                }
-                
-                // Binding the 'Play Again' buttons to their respective actions
-                if (topPlayAgainBtn) topPlayAgainBtn.onclick = window.startGame; // Top button starts game
-                if (modalPlayAgainBtn) modalPlayAgainBtn.onclick = window.resetGame; // Modal button resets game
-
-                // === INIT ===
-                wordsEl.textContent = 0 / ${WORDS.length};
-                document.getElementById("start-modal")?.classList.remove("hidden");
-
-            } catch(e) {
-                console.error("Initialization error:", e);
+function generateWordSearch(words) {
+    let grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(null));
+    wordLocations = [];
+    const shuffledWords = [...words].sort(() => Math.random() - 0.5);
+    shuffledWords.forEach(wordData => {
+        const word = wordData.word;
+        let placed = false;
+        let attempts = 0;
+        const maxAttempts = GRID_SIZE * GRID_SIZE * DIRECTIONS.length * 3;
+        while (!placed && attempts < maxAttempts) {
+            attempts++;
+            const r = Math.floor(Math.random() * GRID_SIZE);
+            const c = Math.floor(Math.random() * GRID_SIZE);
+            const dir = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+            if (attemptPlacement(word, r, c, dir, grid)) {
+                placed = true;
+                wordLocations.push({
+                    ...wordData,
+                    startR: r,
+                    startC: c,
+                    endR: r + (word.length - 1) * dir.dr,
+                    endC: c + (word.length - 1) * dir.dc,
+                    direction: dir.name
+                });
             }
-        }, 100);
-    };
+        }
+    });
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            if (grid[r][c] === null) {
+                grid[r][c] = getRandomLetter();
+            }
+        }
+    }
+    return grid;
+}
 
-    safeInit();
+// UI Rendering
+function renderGrid(grid) {
+    gridElement.innerHTML = '';
+    for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.textContent = grid[r][c];
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+            gridElement.appendChild(cell);
+        }
+    }
+    gridElement.onmousedown = onSelectStart;
+    gridElement.ontouchstart = onSelectStart;
+    document.onmouseup = onSelectEvent;
+    document.ontouchend = onSelectEnd;
+    document.onmousemove = onSelectMove;
+    document.ontouchmove = onSelectMove;
+}
 
-})();
+// Timer Logic
+function formatTime(seconds) {
+    const min = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const sec = String(seconds % 60).padStart(2, '0');
+    return `${min}:${sec}`;
+}
+
+function timerTick() {
+    timeRemaining--;
+    timerDisplay.textContent = formatTime(timeRemaining);
+    if (timeRemaining <= 0) {
+        endGame(false);
+    } else if (timeRemaining <= 10) {
+        timerDisplay.classList.add('animate-pulse', 'text-red-700');
+    }
+}
+
+function startTimer() {
+    clearInterval(timerInterval);
+    timeRemaining = TIME_LIMIT_SECONDS;
+    timerDisplay.classList.remove('animate-pulse', 'text-red-700');
+    timerDisplay.textContent = formatTime(timeRemaining);
+    timerInterval = setInterval(timerTick, 1000);
+}
+
+// Initialization
+window.onload = () => {
+    wordsSolvedDisplay.textContent = `0 / ${allWordsBase.length}`;
+    const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE).fill('<div class="grid-cell"></div>').join('');
+    gridElement.innerHTML = emptyGridHtml;
+    openStartModal();
+    startGameBtn.onclick = () => { closeStartModal(); startGame(); };
+    playAgainBtn.onclick = resetGame;
+};
