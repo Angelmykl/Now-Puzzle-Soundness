@@ -99,6 +99,80 @@ function startGame() {
     playAgainBtn.classList.remove('hidden');
     startTimer();
 }
+function showModal(heading, message) {
+    const averageScore = Math.floor(allWordsBase.length / 2);
+    const timeUsed = TIME_LIMIT_SECONDS - timeRemaining;
+    const mins = String(Math.floor(timeUsed / 60)).padStart(2, '0');
+    const secs = String(timeUsed % 60).padStart(2, '0');
+    const timeStr = `${mins}:${secs}`;
+    const gameUrl = window.location.href;
+
+    let champMessage = '';
+    if (score > averageScore) {
+        champMessage = '<div class="mt-4 text-3xl font-bold text-yellow-500 flex items-center justify-center gap-2">YOU ARE A PUZZLE CHAMP!</div>';
+    }
+
+    // Create share button (disabled until image ready)
+    const shareButton = document.createElement('button');
+    shareButton.textContent = 'Preparing image...';
+    shareButton.disabled = true;
+    shareButton.className = 'mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md opacity-70';
+
+    // Show modal
+    document.getElementById('modal-heading').innerHTML = heading + champMessage;
+    document.getElementById('modal-message').innerHTML = message + '<div class="mt-4" id="share-container"></div>';
+    document.getElementById('modal-score').textContent = score;
+    document.getElementById('modal-solved-words').textContent = wordsSolved;
+    document.getElementById('modal-total-words').textContent = allWordsBase.length;
+    document.getElementById('score-modal').classList.remove('hidden');
+
+    // FIX: Correct ID + no typo
+    const shareContainer = document.getElementById('share-container');
+    shareContainer.appendChild(shareButton);
+
+    // Capture screenshot
+    html2canvas(document.body, { scale: 2, useCORS: true }).then(canvas => {
+        canvas.toBlob(async (blob) => {
+            try {
+                const formData = new FormData();
+                formData.append('image', blob, 'soundness-score.png');
+
+                const response = await fetch('https://api.imgbb.com/1/upload?key=5e3f7c7d5a6b4c9d8e1f2a3b4c5d6e7f', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const imageUrl = data.data.url;
+
+                    const tweetText = encodeURIComponent(
+                        `I just CRUSHED ${score} in Soundness Word Puzzle! Brain on fire. Can YOU beat my score? ${gameUrl} #WordPuzzle`
+                    );
+                    const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${imageUrl}`;
+
+                    shareButton.innerHTML = `
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Share on X with Score!
+                    `;
+                    shareButton.disabled = false;
+                    shareButton.className = 'mt-5 inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8] transition shadow-md';
+                    shareButton.onclick = () => window.open(tweetUrl, '_blank');
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (err) {
+                shareButton.textContent = 'Share Failed';
+                shareButton.disabled = false;
+                console.error('Share error:', err);
+            }
+        });
+    }).catch(err => {
+        shareButton.textContent = 'Screenshot Failed';
+        console.error('Canvas error:', err);
+    });
+}
 
 function resetGame() {
     clearInterval(timerInterval);
