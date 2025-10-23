@@ -89,9 +89,9 @@ function showModal(heading, message) {
     const tweetText = encodeURIComponent(
         `I just CRUSHED ${score} in Soundness Word Puzzle Built by @Angelmykl! Brain on fire. Can YOU beat my score? 
         
-        ${gameUrl} 
+    ${gameUrl} 
         
-        #WordPuzzle`
+    #WordPuzzle`
     );
     const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
 
