@@ -248,13 +248,30 @@
                     startTimer();
                 };
 
-                window.resetGame = () => {
-                    clearInterval(interval);
-                    hideResult();
-                    openModal();
-                    newGameBtn.classList.remove('hidden');
-                    playAgainBtn.classList.add('hidden');
-                };
+                // === RESET GAME (FIXED) ===
+window.resetGame = () => {
+    clearInterval(interval);
+    timeLeft = TIME;
+    timer.textContent = fmt(timeLeft);
+    score = found = 0;
+    WORDS.forEach(w => w.solved = false);
+    grid.innerHTML = '';
+    // Rebuild empty grid
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            const el = document.createElement('div');
+            el.className = 'grid-cell';
+            el.dataset.row = r;
+            el.dataset.col = c;
+            grid.appendChild(el);
+        }
+    }
+    hideResult();
+    openModal();
+    newGameBtn.classList.remove('hidden');
+    playAgainBtn.classList.add('hidden');
+    update();
+};
 
                 // === BUTTONS ===
                 if (startBtn) startBtn.onclick = window.startGame;
