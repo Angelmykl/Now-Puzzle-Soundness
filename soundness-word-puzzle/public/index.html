@@ -19,7 +19,6 @@
       align-items: center;
     }
 
-    /* === 17x17 GRID — FORCED === */
     #crossword-grid {
       display: grid;
       grid-template-columns: repeat(17, 1fr);
@@ -72,6 +71,11 @@
 
     button {
       transition: all 0.2s;
+      font-weight: bold;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 1.25rem;
+      cursor: pointer;
     }
 
     button:disabled {
@@ -79,14 +83,9 @@
       cursor: not-allowed;
     }
 
-    /* Buttons */
     .btn-primary {
       background: #3b82f6;
       color: white;
-      font-weight: bold;
-      padding: 0.75rem 2rem;
-      border-radius: 0.5rem;
-      font-size: 1.25rem;
     }
 
     .btn-primary:hover:not(:disabled) {
@@ -96,14 +95,19 @@
     .btn-success {
       background: #10b981;
       color: white;
-      font-weight: bold;
-      padding: 0.75rem 2rem;
-      border-radius: 0.5rem;
-      font-size: 1.25rem;
     }
 
     .btn-success:hover:not(:disabled) {
       background: #059669;
+    }
+
+    .btn-white {
+      background: white;
+      color: #1d4ed8;
+    }
+
+    .btn-white:hover:not(:disabled) {
+      background: #f3f4f6;
     }
   </style>
 </head>
@@ -138,7 +142,7 @@
       <p class="text-lg mb-6">
         You have <strong>3 minutes 30 seconds</strong> to find all <strong>31 hidden words</strong> by dragging or swiping your finger across the letters.
       </p>
-      <button id="start-challenge-btn" class="bg-white text-blue-700 font-bold py-3 px-8 rounded-lg text-xl hover:bg-gray-100 transition">
+      <button id="start-challenge-btn" class="btn-white">
         Start Challenge
       </button>
     </div>
