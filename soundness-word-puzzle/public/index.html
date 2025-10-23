@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Soundness Word Puzzle</title>
   <link href="/styles.css" rel="stylesheet" />
-  <!-- html2canvas for screenshot sharing -->
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
-    /* Tailwind CDN + Custom */
     @import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
     body { background: #111827; color: white; font-family: 'Segoe UI', sans-serif; }
     .grid-container { display: grid; grid-template-columns: repeat(17, 1fr); gap: 1px; max-width: 600px; margin: 0 auto; }
@@ -32,11 +30,6 @@
       <div id="timer-display" class="font-mono text-2xl">03:30</div>
     </div>
   </div>
-
-  <!-- Start Button (Top) -->
-  <button id="start-game-btn" class="mb-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-xl transition hidden">
-    Start New Game
-  </button>
 
   <!-- Score -->
   <div class="flex gap-8 mb-4 text-lg">
@@ -73,7 +66,6 @@
       <div class="text-xl mb-2">Score: <span id="modal-score" class="font-bold text-yellow-400">0</span></div>
       <div class="text-lg mb-6">Words Found: <span id="modal-solved-words" class="font-bold">0</span> / <span id="modal-total-words">31</span></div>
       
-      <!-- Share Button Container -->
       <div id="share-container" class="mt-4"></div>
 
       <button onclick="resetGame()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
