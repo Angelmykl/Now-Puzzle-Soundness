@@ -206,75 +206,81 @@
                 };
 
                 // === END ===
-                const end = won => {
-                    clearInterval(interval);
-                    grid.onmousedown = grid.ontouchstart = null;
-                    document.onmouseup = document.ontouchend = document.onmousemove = document.ontouchmove = null;
-                    showResult(won ? "PUZZLE SOLVED!" : "TIME'S UP!", won ? "All words found!" : `Found ${found}/${WORDS.length}`);
-                };
+                // === END ===
+const end = (won) => {
+  clearInterval(interval);
+  grid.onmousedown = grid.ontouchstart = null;
+  document.onmouseup = document.ontouchend = document.onmousemove = document.ontouchmove = null;
+  showResult(
+    won ? "PUZZLE SOLVED!" : "TIME'S UP!",
+    won ? "All words found!" : `Found ${found}/${WORDS.length}`
+  );
+};
 
-                // === RESULT MODAL ===
-                const showResult = (title, msg) => {
-                    const champ = score > 15 ? '<div class="mt-2 text-2xl font-bold text-yellow-400">YOU ARE A PUZZLE CHAMP!</div>' : '';
-                    document.getElementById('modal-heading').innerHTML = title + champ;
-                    document.getElementById('modal-message').textContent = msg;
-                    document.getElementById('modal-score').textContent = score;
-                    document.getElementById('modal-solved-words').textContent = found;
-                    document.getElementById('score-modal').classList.remove('hidden');
+// === RESULT MODAL ===
+const showResult = (title, msg) => {
+  const champ =
+    score > Math.floor(WORDS.length / 2)
+      ? '<div class="mt-2 text-2xl font-bold text-yellow-400">🏆 YOU ARE A PUZZLE CHAMP! 🏆</div>'
+      : "";
+  document.getElementById("modal-heading").innerHTML = title + champ;
+  document.getElementById("modal-message").textContent = msg;
+  document.getElementById("modal-score").textContent = score;
+  document.getElementById("modal-solved-words").textContent = found;
+  document.getElementById("score-modal").classList.remove("hidden");
 
-                    const share = document.getElementById('share-container');
-                    share.innerHTML = '<button disabled class="bg-gray-500 text-white py-2 px-4 rounded">Preparing...</button>';
-                    setTimeout(() => {
-                        const txt = `I just CRUSHED ${score} in Soundness Word Puzzle! Built by Angelmykl. Brain on fire. Can YOU beat my score? ${location.href} #WordPuzzle`;
-                        share.innerHTML = `
-                            <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(txt)}" target="_blank"
-                               class="inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8]">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                                Share on X
-                            </a>`;
-                    }, 500);
-                };
+  // Keep Share on X
+  const share = document.getElementById("share-container");
+  share.innerHTML = `
+    <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(
+      `I just scored ${score} points in the Soundness Puzzle! Can you beat me? ${location.href} #WordPuzzle`
+    )}" target="_blank"
+    class="inline-flex items-center gap-2 bg-[#1DA1F2] text-white font-bold py-3 px-6 rounded-lg hover:bg-[#1a8cd8]">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+      </svg>
+      Share on X
+    </a>
+  `;
+};
 
-                // === START GAME ===
-                window.startGame = () => {
-                    closeModal();
-                    score = found = 0;
-                    WORDS.forEach(w => w.solved = false);
-                    gridData = build();
-                    render(gridData);
-                    update();
-                    newGameBtn.classList.add('hidden');
-                    playAgainBtn.classList.remove('hidden');
-                    startTimer();
-                };
+// === START GAME ===
+window.startGame = () => {
+  document.getElementById("start-modal")?.classList.add("hidden");
+  document.getElementById("score-modal")?.classList.add("hidden");
+  score = found = 0;
+  WORDS.forEach((w) => (w.solved = false));
+  gridData = build();
+  render(gridData);
+  update();
+  newGameBtn.classList.add("hidden");
+  playAgainBtn.classList.remove("hidden");
+  startTimer();
+};
 
-                window.resetGame = () => {
-                    clearInterval(interval);
-                    hideResult();
-                    openModal();
-                    newGameBtn.classList.remove('hidden');
-                    playAgainBtn.classList.add('hidden');
-                };
+// === FIXED PLAY AGAIN BUTTON ===
+window.resetGame = () => {
+  clearInterval(interval);
+  timeLeft = TIME;
+  timer.textContent = fmt(timeLeft);
+  score = found = 0;
+  WORDS.forEach((w) => (w.solved = false));
 
-                // === BUTTONS ===
-                if (startBtn) startBtn.onclick = window.startGame;
-                if (newGameBtn) newGameBtn.onclick = window.startGame;
-                if (playAgainBtn) playAgainBtn.onclick = window.resetGame;
+  // Hide modal first
+  document.getElementById("score-modal")?.classList.add("hidden");
 
-                // === INIT ===
-                wordsEl.textContent = `0 / ${WORDS.length}`;
-                openModal();
+  // Rebuild grid and start new game instantly
+  gridData = build();
+  render(gridData);
+  update();
+  startTimer();
+};
 
-            } catch (e) {
-                console.error("Game failed:", e);
-            }
-        }, 600);
-    };
+// === BUTTON EVENTS ===
+if (startBtn) startBtn.onclick = window.startGame;
+if (newGameBtn) newGameBtn.onclick = window.startGame;
+if (playAgainBtn) playAgainBtn.onclick = window.resetGame;
 
-    // Run after DOM + wallet scripts
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', safeInit);
-    } else {
-        safeInit();
-    }
-})();
+// === INIT ===
+wordsEl.textContent = `0 / ${WORDS.length}`;
+document.getElementById("start-modal")?.classList.remove("hidden");
