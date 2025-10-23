@@ -375,9 +375,20 @@ function startTimer() {
 // Initialization
 window.onload = () => {
     wordsSolvedDisplay.textContent = `0 / ${allWordsBase.length}`;
-    const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE).fill('<div class="grid-cell"></div>').join('');
+    
+    // Create 17x17 empty grid
+    const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE)
+        .fill('<div class="grid-cell"></div>')
+        .join('');
     gridElement.innerHTML = emptyGridHtml;
+
     openStartModal();
-    startGameBtn.onclick = () => { closeStartModal(); startGame(); };
+
+    // CORRECT BUTTON
+    document.getElementById('start-challenge-btn').onclick = () => {
+        closeStartModal();
+        startGame();
+    };
+
     playAgainBtn.onclick = resetGame;
 };
