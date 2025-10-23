@@ -13,13 +13,17 @@ let wordLocations = [];
 let solvedCells = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(false));
 let startCoords = null;
 
-// Elements
-const gridElement = document.getElementById('crossword-grid');
-const timerDisplay = document.getElementById('timer-display');
-const scoreDisplay = document.getElementById('score-display');
-const wordsSolvedDisplay = document.getElementById('words-solved-display');
-const startGameBtn = document.getElementById('start-game-btn');
-const playAgainBtn = document.getElementById('play-again-btn');
+// Elements (with error handling)
+let gridElement, timerDisplay, scoreDisplay, wordsSolvedDisplay, startGameBtn, playAgainBtn;
+
+function initElements() {
+    gridElement = document.getElementById('crossword-grid');
+    timerDisplay = document.getElementById('timer-display');
+    scoreDisplay = document.getElementById('score-display');
+    wordsSolvedDisplay = document.getElementById('words-solved-display');
+    startGameBtn = document.getElementById('start-game-btn');
+    playAgainBtn = document.getElementById('play-again-btn');
+}
 
 // Word List (31 words)
 const allWordsBase = [
@@ -343,7 +347,7 @@ function generateWordSearch(words) {
             const r = Math.floor(Math.random() * GRID_SIZE);
             const c = Math.floor(Math.random() * GRID_SIZE);
             const dir = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
-            if (attemptPlacement(word, r, c, dir, grid)) {
+            if (attemptPlacement(word, r, dir, grid)) {
                 placed = true;
                 wordLocations.push({
                     ...wordData,
@@ -413,10 +417,23 @@ function startTimer() {
 
 // Initialization
 window.onload = () => {
+    initElements();
     wordsSolvedDisplay.textContent = `0 / ${allWordsBase.length}`;
     const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE).fill('<div class="grid-cell"></div>').join('');
     gridElement.innerHTML = emptyGridHtml;
     openStartModal();
-    startGameBtn.onclick = () => { closeStartModal(); startGame(); };
+
+    const startChallengeBtn = document.getElementById('start-challenge-btn');
+    if (startChallengeBtn) {
+        startChallengeBtn.onclick = () => {
+            closeStartModal();
+            startGame();
+        };
+    }
+
+    startGameBtn.onclick = () => {
+        closeStartModal();
+        startGame();
+    };
     playAgainBtn.onclick = resetGame;
 };
