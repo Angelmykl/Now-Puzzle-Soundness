@@ -7,21 +7,107 @@
   <link href="/styles.css" rel="stylesheet" />
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
-    @import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
-    body { background: #111827; color: white; font-family: 'Segoe UI', sans-serif; }
-    .grid-container { display: grid; grid-template-columns: repeat(17, 1fr); gap: 1px; max-width: 600px; margin: 0 auto; }
-    .grid-cell { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: #1f2937; font-weight: bold; font-size: 0.8rem; cursor: pointer; user-select: none; }
-    @media (min-width: 640px) { .grid-cell { font-size: 1rem; } }
-    .cell-highlight { background: #60a5fa !important; color: white; }
-    .cell-solved { background: #34d399 !important; color: white; animation: pulse 0.5s; }
-    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    body {
+      background: #111827;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 1rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* === 17x17 GRID — FORCED === */
+    #crossword-grid {
+      display: grid;
+      grid-template-columns: repeat(17, 1fr);
+      gap: 1px;
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      border: 2px solid #374151;
+      background: #374151;
+    }
+
+    .grid-cell {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1f2937;
+      font-weight: bold;
+      font-size: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    @media (min-width: 640px) {
+      .grid-cell { font-size: 1rem; }
+    }
+
+    .cell-highlight {
+      background: #60a5fa !important;
+      color: white;
+    }
+
+    .cell-solved {
+      background: #34d399 !important;
+      color: white;
+      animation: pulse 0.5s;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
     .hidden { display: none; }
+
     .animate-pulse { animation: pulse 1s infinite; }
-    button { transition: all 0.2s; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    button {
+      transition: all 0.2s;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+      font-weight: bold;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 1.25rem;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #2563eb;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+      font-weight: bold;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 1.25rem;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #059669;
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body>
 
   <!-- Header -->
   <div class="text-center mb-6">
@@ -38,10 +124,10 @@
   </div>
 
   <!-- Grid -->
-  <div id="crossword-grid" class="grid-container w-full max-w-lg mx-auto"></div>
+  <div id="crossword-grid"></div>
 
   <!-- Play Again Button -->
-  <button id="play-again-btn" class="mt-6 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg text-xl transition hidden">
+  <button id="play-again-btn" class="mt-6 btn-success hidden">
     Play Again
   </button>
 
