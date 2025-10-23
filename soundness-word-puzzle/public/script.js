@@ -87,7 +87,7 @@ function showModal(heading, message) {
 
     // Share button for ALL players
     const tweetText = encodeURIComponent(
-        `I just CRUSHED ${score} in Soundness Word Puzzle Built by @Angelmykl! Brain on fire. Can YOU beat my score? 
+        `I just CRUSHED ${score} in Soundness Word Puzzle Built by @angelmykl_eth! Brain on fire. Can YOU beat my score? 
         
 ${gameUrl} 
         
