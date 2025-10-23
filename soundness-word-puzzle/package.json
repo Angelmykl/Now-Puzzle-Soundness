@@ -1,26 +1,12 @@
 {
-  "name": "soundness-word-puzzle",
-  "version": "1.0.0",
-  "description": "A 17x17 word search puzzle game with timer, score, and screenshot sharing on X",
-  "main": "public/index.html",
-  "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build required — static files only'",
-    "start": "vercel dev"
-  },
-  "keywords": [
-    "word-search",
-    "puzzle",
-    "game",
-    "html5",
-    "javascript",
-    "vercel"
-  ],
-  "author": "Angelmykl",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18"
-  },
-  "devDependencies": {},
-  "dependencies": {}
+    "name": "soundness-word-puzzle",
+    "version": "1.0.0",
+    "description": "A word search puzzle game built by Angelmykl",
+    "main": "public/index.html",
+    "scripts": {
+        "start": "vercel dev",
+        "deploy": "vercel --prod"
+    },
+    "author": "Angelmykl",
+    "license": "MIT"
 }
