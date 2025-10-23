@@ -1,69 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soundness Word Puzzle</title>
-    <link rel="stylesheet" href="/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Soundness Word Puzzle</title>
+  <link href="/styles.css" rel="stylesheet" />
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <style>
+    body {
+      background: #111827;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 1rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* === 17x17 GRID — FORCED === */
+    #crossword-grid {
+      display: grid;
+      grid-template-columns: repeat(17, 1fr);
+      gap: 1px;
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      border: 2px solid #374151;
+      background: #374151;
+    }
+
+    .grid-cell {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1f2937;
+      font-weight: bold;
+      font-size: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    @media (min-width: 640px) {
+      .grid-cell { font-size: 1rem; }
+    }
+
+    .cell-highlight {
+      background: #60a5fa !important;
+      color: white;
+    }
+
+    .cell-solved {
+      background: #34d399 !important;
+      color: white;
+      animation: pulse 0.5s;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .hidden { display: none; }
+
+    .animate-pulse { animation: pulse 1s infinite; }
+
+    button {
+      transition: all 0.2s;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+      font-weight: bold;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 1.25rem;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #2563eb;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+      font-weight: bold;
+      padding: 0.75rem 2rem;
+      border-radius: 0.5rem;
+      font-size: 1.25rem;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #059669;
+    }
+  </style>
 </head>
 <body>
-    <div class="flex flex-col w-full max-w-xl bg-[#1e2329] rounded-2xl p-4 md:p-8 shadow-2xl space-y-6">
-        <div class="w-full flex justify-between items-center">
-            <h1 class="text-3xl font-extrabold text-white">Word Search Challenge</h1>
-            <div class="flex items-center space-x-2 bg-[#0d1117] p-3 rounded-lg shadow-inner">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span id="timer-display" class="timer-display text-2xl font-bold text-red-500">03:30</span>
-            </div>
-        </div>
-        <div class="flex space-x-3">
-            <button id="start-game-btn" class="flex-1 bg-sky-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-sky-700 transition duration-150">
-                Start New Game
-            </button>
-            <button id="play-again-btn" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 transition duration-150 hidden">
-                Play Again
-            </button>
-        </div>
-        <div class="w-full flex justify-between p-3 bg-gray-700 rounded-lg text-white font-medium text-lg">
-            <span>Score: <span id="score-display" class="font-bold text-blue-400">0</span></span>
-            <span>Words Found: <span id="words-solved-display" class="font-bold text-sky-400">0 / 31</span></span>
-        </div>
-        <div id="crossword-grid-container" class="w-full">
-            <div id="crossword-grid" style="--grid-size: 17;"></div>
-        </div>
-        <p class="text-sm text-gray-500 italic text-center pt-2">Soundness Word Puzzle built by Angelmykl</p>
-    </div>
 
-    <!-- Start Modal -->
-    <div id="start-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
-        <div class="bg-blue-900 p-8 rounded-xl max-w-md w-full text-center shadow-2xl border border-blue-700">
-            <h2 class="score-modal-heading text-4xl font-extrabold text-white mb-4">Welcome to Soundness Word Search by Angelmykl</h2>
-            <p class="text-blue-200 mb-6">You have <strong>3 minutes 30 seconds</strong> to find all <strong>31</strong> hidden words by dragging or swiping your finger across the letters.</p>
-            <button onclick="closeStartModal(); startGame();" class="button-primary bg-sky-500 text-white font-bold py-3 px-8 rounded-xl hover:bg-sky-600 transition duration-150">
-                Start Challenge
-            </button>
-        </div>
+  <!-- Header -->
+  <div class="text-center mb-6">
+    <h1 class="text-4xl font-bold mb-2">Word Search Challenge</h1>
+    <div class="flex justify-center items-center gap-6 text-lg">
+      <div id="timer-display" class="font-mono text-2xl">03:30</div>
     </div>
+  </div>
 
-    <!-- Score Modal -->
-    <div id="score-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center">
-        <div class="bg-white p-8 rounded-xl max-w-md w-full text-center shadow-2xl">
-            <h2 id="modal-heading" class="score-modal-heading text-4xl font-extrabold text-blue-600 mb-4"></h2>
-            <p id="modal-message" class="text-gray-600 mb-6 text-xl"></p>
-            <div class="bg-blue-50 p-4 rounded-lg mb-6">
-                <p class="text-lg font-semibold text-gray-700">Your Final Score:</p>
-                <p id="modal-score" class="text-5xl font-black text-blue-700 my-2"></p>
-                <p class="text-sm text-gray-500">Total Solved: <span id="modal-solved-words"></span> / <span id="modal-total-words">31</span></p>
-            </div>
-            <button onclick="hideModal(); resetGame();" class="button-primary bg-blue-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700">
-                Play Again
-            </button>
-        </div>
+  <!-- Score -->
+  <div class="flex gap-8 mb-4 text-lg">
+    <div>Score: <span id="score-display" class="font-bold text-yellow-400">0</span></div>
+    <div>Words Found: <span id="words-solved-display" class="font-bold">0 / 31</span></div>
+  </div>
+
+  <!-- Grid -->
+  <div id="crossword-grid"></div>
+
+  <!-- Play Again Button -->
+  <button id="play-again-btn" class="mt-6 btn-success hidden">
+    Play Again
+  </button>
+
+  <!-- Start Modal -->
+  <div id="start-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+    <div class="bg-blue-700 rounded-xl p-8 max-w-md w-full text-center shadow-2xl">
+      <h2 class="text-3xl font-bold mb-4">WELCOME TO SOUNDNESS WORD SEARCH BY ANGELMYKL</h2>
+      <p class="text-lg mb-6">
+        You have <strong>3 minutes 30 seconds</strong> to find all <strong>31 hidden words</strong> by dragging or swiping your finger across the letters.
+      </p>
+      <button id="start-challenge-btn" class="bg-white text-blue-700 font-bold py-3 px-8 rounded-lg text-xl hover:bg-gray-100 transition">
+        Start Challenge
+      </button>
     </div>
+  </div>
 
-    <script src="/script.js"></script>
+  <!-- Score Modal -->
+  <div id="score-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+    <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full text-center">
+      <h2 id="modal-heading" class="text-3xl font-bold mb-4"></h2>
+      <p id="modal-message" class="text-lg mb-4"></p>
+      <div class="text-xl mb-2">Score: <span id="modal-score" class="font-bold text-yellow-400">0</span></div>
+      <div class="text-lg mb-6">Words Found: <span id="modal-solved-words" class="font-bold">0</span> / <span id="modal-total-words">31</span></div>
+      
+      <div id="share-container" class="mt-4"></div>
+
+      <button onclick="resetGame()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
+        Play Again
+      </button>
+    </div>
+  </div>
+
+  <script src="/script.js"></script>
 </body>
 </html>
