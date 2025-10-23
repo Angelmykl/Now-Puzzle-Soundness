@@ -414,20 +414,26 @@ function startTimer() {
 
 // Initialization
 window.onload = () => {
+    // Initial display
     wordsSolvedDisplay.textContent = `0 / ${allWordsBase.length}`;
     const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE).fill('<div class="grid-cell"></div>').join('');
     gridElement.innerHTML = emptyGridHtml;
+
+    // Show start modal
     openStartModal();
 
-    // Start Challenge Button
+    // === FIX: Start Challenge Button ===
     const startChallengeBtn = document.getElementById('start-challenge-btn');
     if (startChallengeBtn) {
         startChallengeBtn.onclick = () => {
             closeStartModal();
             startGame();
         };
+    } else {
+        console.error("ERROR: #start-challenge-btn not found in DOM!");
     }
 
+    // Other buttons
     startGameBtn.onclick = () => {
         closeStartModal();
         startGame();
