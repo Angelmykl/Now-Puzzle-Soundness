@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Screenshot library (with fallback) -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 </head>
 <body>
@@ -25,7 +24,7 @@
             <button id="start-game-btn" class="flex-1 bg-sky-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-sky-700 transition duration-150">
                 Start New Game
             </button>
-            <button id="play-again-btn" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 transition duration-150 hidden">
+            <button id="top-play-again-btn" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 transition duration-150 hidden">
                 Play Again
             </button>
         </div>
@@ -39,7 +38,6 @@
         <p class="text-sm text-gray-500 italic text-center pt-2">Soundness Word Puzzle built by Angelmykl</p>
     </div>
 
-    <!-- Start Modal -->
     <div id="start-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
         <div class="bg-blue-900 p-8 rounded-xl max-w-md w-full text-center shadow-2xl border border-blue-700">
             <h2 class="score-modal-heading text-4xl font-extrabold text-white mb-4">Welcome to Soundness Word Search by Angelmykl</h2>
@@ -50,7 +48,6 @@
         </div>
     </div>
 
-    <!-- Score Modal -->
     <div id="score-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center">
         <div class="bg-white p-8 rounded-xl max-w-md w-full text-center shadow-2xl">
             <h2 id="modal-heading" class="score-modal-heading text-4xl font-extrabold text-blue-600 mb-4"></h2>
@@ -61,10 +58,9 @@
                 <p class="text-sm text-gray-500">Total Solved: <span id="modal-solved-words"></span> / <span id="modal-total-words">31</span></p>
             </div>
 
-            <!-- Share Container for Photo + Button -->
             <div id="share-container" class="mt-4"></div>
 
-            <button onclick="hideModal(); resetGame();" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700">
+            <button id="play-again-modal-btn" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700">
                 Play Again
             </button>
         </div>
