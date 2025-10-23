@@ -418,6 +418,20 @@ window.onload = () => {
     const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE).fill('<div class="grid-cell"></div>').join('');
     gridElement.innerHTML = emptyGridHtml;
     openStartModal();
-    startGameBtn.onclick = () => { closeStartModal(); startGame(); };
+
+    // Button Listeners
+    const startChallengeBtn = document.getElementById('start-challenge-btn');
+    if (startChallengeBtn) {
+        startChallengeBtn.onclick = () => {
+            closeStartModal();
+            startGame();
+        };
+    }
+
+    startGameBtn.onclick = () => {
+        closeStartModal();
+        startGame();
+    };
+
     playAgainBtn.onclick = resetGame;
 };
