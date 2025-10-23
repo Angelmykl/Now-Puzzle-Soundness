@@ -418,6 +418,13 @@ window.onload = () => {
     const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE).fill('<div class="grid-cell"></div>').join('');
     gridElement.innerHTML = emptyGridHtml;
     openStartModal();
-    startGameBtn.onclick = () => { closeStartModal(); startGame(); };
+
+    // CORRECT: Use #start-challenge-btn
+    document.getElementById('start-challenge-btn').onclick = () => {
+        closeStartModal();
+        startGame();
+    };
+
+    // Play Again button
     playAgainBtn.onclick = resetGame;
 };
