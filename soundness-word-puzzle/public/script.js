@@ -103,7 +103,7 @@ function showModal(heading, message) {
     // Champ message ONLY if score > 15
     let champMessage = '';
     if (score > averageScore) {
-        champMessage = '<div class="mt-4 text-3xl font-bold text-yellow-500 flex items-center justify-center gap-2">YOU ARE A PUZZLE CHAMP!</div>';
+        champMessage = '<div class="mt-4 text-3xl font-bold text-yellow-500 flex items-center justify-center gap-2">YOU ARE A PUZZLE CHAMP! 🏆</div>';
     }
 
     document.getElementById('modal-heading').innerHTML = heading + champMessage;
@@ -341,7 +341,7 @@ function renderGrid(grid) {
     }
     gridElement.onmousedown = onSelectStart;
     gridElement.ontouchstart = onSelectStart;
-    document.onmouseup = onSelectEvent;
+    document.onmouseup = onSelectEnd;
     document.ontouchend = onSelectEnd;
     document.onmousemove = onSelectMove;
     document.ontouchmove = onSelectMove;
