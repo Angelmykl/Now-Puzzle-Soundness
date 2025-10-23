@@ -419,7 +419,7 @@ window.onload = () => {
     gridElement.innerHTML = emptyGridHtml;
     openStartModal();
 
-    // Button Listeners
+    // Start Challenge Button
     const startChallengeBtn = document.getElementById('start-challenge-btn');
     if (startChallengeBtn) {
         startChallengeBtn.onclick = () => {
@@ -432,6 +432,5 @@ window.onload = () => {
         closeStartModal();
         startGame();
     };
-
     playAgainBtn.onclick = resetGame;
 };
