@@ -414,29 +414,33 @@ function startTimer() {
 
 // Initialization
 window.onload = () => {
-    // Initial display
+    // 1. Set initial display
     wordsSolvedDisplay.textContent = `0 / ${allWordsBase.length}`;
     const emptyGridHtml = Array(GRID_SIZE * GRID_SIZE).fill('<div class="grid-cell"></div>').join('');
     gridElement.innerHTML = emptyGridHtml;
 
-    // Show start modal
-    openStartModal();
+    // 2. Wait for DOM to be fully ready
+    setTimeout(() => {
+        // 3. Now attach button click
+        const startChallengeBtn = document.getElementById('start-challenge-btn');
+        if (startChallengeBtn) {
+            startChallengeBtn.onclick = () => {
+                closeStartModal();
+                startGame();
+            };
+            console.log("Start Challenge button attached!");
+        } else {
+            console.error("ERROR: #start-challenge-btn NOT FOUND!");
+        }
 
-    // === FIX: Start Challenge Button ===
-    const startChallengeBtn = document.getElementById('start-challenge-btn');
-    if (startChallengeBtn) {
-        startChallengeBtn.onclick = () => {
+        // 4. Now show modal
+        openStartModal();
+
+        // 5. Other buttons
+        startGameBtn.onclick = () => {
             closeStartModal();
             startGame();
         };
-    } else {
-        console.error("ERROR: #start-challenge-btn not found in DOM!");
-    }
-
-    // Other buttons
-    startGameBtn.onclick = () => {
-        closeStartModal();
-        startGame();
-    };
-    playAgainBtn.onclick = resetGame;
+        playAgainBtn.onclick = resetGame;
+    }, 100); // Small delay ensures DOM is ready
 };
